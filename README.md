@@ -1,234 +1,231 @@
-# Disclaimer
-
-This project is for educational and research purposes only. It does not constitute financial or investment advice.
-
 # Recommendation-System-Prototype
 
-AI-powered stock and sector recommendation prototype using market data, fundamental indicators, and explainable scoring to support investment decision-making.
+AI-powered sector monitoring prototype using Google Trends, market data, fundamentals, and explainable scoring.
 
-## Overview
+## Disclaimer
 
-This repository contains a university prototype for an AI-based recommendation system in the financial sector.
-The system is designed to evaluate stocks and sectors based on different data sources, such as market data and company fundamentals, and generate transparent recommendation scores.
-
-The goal is not to predict stock prices with certainty, but to provide a decision-support tool that helps analysts, advisors, or financial institutions structure investment-related information more efficiently.
+This project is for educational and research purposes only. It does not constitute financial advice, investment advice, or a recommendation to buy or sell any financial instrument. The system is a decision-support prototype and does not execute trades.
 
 ## Project Context
 
-This prototype was developed as part of a university project focusing on artificial intelligence applications in business and finance.
+This prototype was developed as part of a university AI consulting project: *Konzeption eines KI-gestuetzten Sektor-Monitorings am Kapitalmarkt: Synergieanalyse von Google Trends und Fundamentaldaten zur Renditeoptimierung*.
 
-The use case assumes a consulting scenario for a bank that wants to explore how artificial intelligence could support investment analysis, customer advisory processes, and internal decision-making.
+The use case assumes a fictional bank or asset manager that wants to support its research team with AI-based sector monitoring. The focus is sector-level monitoring, not direct automated trading. Google Trends is used as an investor-attention proxy and is combined with sector ETF market data and fundamental indicators to provide analysts with a structured, explainable sector ranking.
 
-The project focuses on two main areas:
+## Current Implementation Status
 
-1. **Recommendation Engine**
-   A decision-support system that scores and ranks stocks or sectors based on selected indicators.
+The current prototype includes:
 
-2. **Trading Bot Outlook**
-   A conceptual extension showing how an automated trading system would require stricter regulatory, technical, and risk-control mechanisms.
+- Automated end-to-end pipeline in `src/pipeline.py`.
+- A ten-sector ETF universe.
+- Google Trends loading with a live/cache/demo/fallback strategy.
+- Explicit Google Trends refresh modes: `auto`, `cache_only`, `force_live`, and `demo_only`.
+- Reproducible demo Google Trends data when live access is unavailable.
+- Market and fundamental data loading through `yfinance`.
+- Technical indicators: momentum, volatility, downside volatility, drawdown, moving averages, distance to the 200-day moving average, and volume momentum.
+- Google Trends indicators: latest value, 4-week and 12-week momentum, 12-week and 52-week z-scores, spike detection, acceleration, volatility, and percentile.
+- Explainable trend, momentum, risk, fundamental, synergy, and confidence scores.
+- Recommendation labels: `Overweight Candidate`, `Watch`, `Neutral`, and `Avoid`.
+- HTML management report generation and a Streamlit dashboard.
+- Output verification and a pytest test suite.
+- Data-quality and actionability gates that prevent demo or missing data from producing investment-like recommendations.
+- A market-only monthly sector-rotation backtesting framework; Google Trends history is not yet part of the backtest.
 
-## Key Features
+Current local validation status: `18 passed` with `python -m pytest`.
 
-* Collection and preparation of financial market data
-* Integration of company and fundamental indicators
-* Scoring logic for stocks and sectors
-* Explainable recommendation output
-* Comparison of selected assets based on transparent criteria
-* Prototype structure suitable for future dashboard or Streamlit implementation
+Dashboard command:
 
-## Data Sources
+```bash
+python -m streamlit run app/app.py
+```
 
-The prototype may include or conceptually refer to the following data categories:
-
-### Market & Price Data
-
-* Historical stock prices
-* Open-High-Low-Close data
-* Trading volume
-* Volatility indicators
-* Technical indicators
-
-### Company & Fundamental Data
-
-* Earnings per share
-* Debt-to-equity ratio
-* Price-to-earnings ratio
-* Price-to-book ratio
-* Revenue and profitability indicators
-* Sector classification
-
-### Alternative Data Sources
-
-* News and text data
-* Social media sentiment
-* Google Trends
-* Website traffic
-* Job postings
-* Sustainability indicators
-
-## Methodology
-
-The recommendation logic follows a transparent scoring approach.
-
-A simplified workflow could look like this:
-
-1. Load market and company data
-2. Clean and preprocess the data
-3. Calculate relevant financial and technical indicators
-4. Normalize indicators to make them comparable
-5. Apply weighted scoring logic
-6. Rank stocks or sectors
-7. Generate an explainable recommendation output
-
-The system is intended as a decision-support tool and does not replace human judgment.
-
-## Planned Repository Structure
+## Repository Structure
 
 ```text
 Recommendation-System-Prototype/
-│
-├── data/                  # Raw and processed datasets
-├── notebooks/             # Exploratory analysis and prototyping
-├── src/                   # Core Python logic
-│   ├── data_loader.py
-│   ├── preprocessing.py
-│   ├── indicators.py
-│   ├── scoring.py
-│   └── recommender.py
-│
-├── app/                   # Optional dashboard or Streamlit app
-├── reports/               # Visualizations and project documentation
-├── requirements.txt       # Python dependencies
-├── README.md
-└── .gitignore
+|-- app/
+|   `-- app.py
+|-- data/
+|   |-- raw/
+|   |-- processed/
+|   |-- demo/
+|   `-- reports/
+|-- reports/
+|   |-- html/
+|   `-- figures/
+|-- src/
+|   |-- config.py
+|   |-- data_loader.py
+|   |-- trends_loader.py
+|   |-- preprocessing.py
+|   |-- indicators.py
+|   |-- scoring.py
+|   |-- report_generator.py
+|   |-- pipeline.py
+|   |-- refresh_trends.py
+|   |-- backtesting.py
+|   `-- verify_outputs.py
+|-- tests/
+|   |-- test_indicators.py
+|   |-- test_scoring.py
+|   |-- test_trends_loader.py
+|   |-- test_backtesting.py
+|   `-- test_pipeline_outputs.py
+|-- requirements.txt
+|-- README.md
+`-- .gitignore
 ```
 
-## Installation
+## Data Sources
 
-Clone the repository:
+Current data sources are:
+
+- `yfinance` for sector ETF market data.
+- `yfinance` for simple fundamental fields where they are available for ETFs.
+- `pytrends` for live Google Trends requests.
+- Local cached data or synthetic demo trend data if live Google Trends requests fail.
+
+Live Google Trends access can fail because of rate limits or API restrictions. In that case, the prototype uses clearly flagged synthetic demo data. Demo data is used only to validate and demonstrate the pipeline; it must not be interpreted as real investor attention.
+
+## Google Trends Rate Limits and Refresh Modes
+
+Google Trends may return HTTP 429 because `pytrends` uses unofficial web requests. To avoid unnecessary live calls, the prototype supports explicit refresh modes:
+
+- `auto`: use fresh cache first; if cache is stale or missing, try live Google Trends; if live fails, use demo data.
+- `cache_only`: never call Google live; use local cache if available, otherwise demo data.
+- `force_live`: try live Google Trends first; if live fails, use cache if available, otherwise demo data.
+- `demo_only`: never call Google live or cache; always use synthetic demo data.
+
+Normal pipeline:
 
 ```bash
-git clone https://github.com/michel1001/Recommendation-System-Prototype.git
-cd Recommendation-System-Prototype
+python src/pipeline.py --trend-mode auto
 ```
 
-Create a virtual environment:
+Demo-safe pipeline:
+
+```bash
+python src/pipeline.py --trend-mode demo_only
+```
+
+Cache-only pipeline:
+
+```bash
+python src/pipeline.py --trend-mode cache_only
+```
+
+Force live refresh during a pipeline run:
+
+```bash
+python src/pipeline.py --trend-mode force_live
+```
+
+Refresh trend cache separately:
+
+```bash
+python src/refresh_trends.py --all
+```
+
+Run dashboard:
+
+```bash
+python -m streamlit run app/app.py
+```
+
+Each run writes `trend_data_status`, `trend_refresh_mode`, and `trend_cache_age_hours` to the output CSV so analysts can see whether a sector used live, cached, demo, or fallback trend input.
+
+## Google Trends Data Status
+
+The `trend_data_status` field appears in the output CSV, dashboard, and report.
+
+- `live`: real Google Trends data loaded from the current API request.
+- `cache`: previously loaded Google Trends data from the local CSV cache.
+- `demo`: synthetic prototype data used when live Google Trends is unavailable.
+- `fallback`: neutral placeholder used only if no trend time series is available; this is the weakest data-quality state.
+
+## Research Signal Status
+
+`data_quality_status` describes whether the inputs are usable for research: `Live research signal`, `Cached research signal`, `Prototype only`, `Insufficient data`, or `Stale data`. `actionability_status` then limits interpretation to `Not actionable`, `Research only`, `Suitable for analyst review`, or `Validated research candidate`.
+
+Demo trend inputs are always marked `Prototype only` and `Not actionable`; their recommendation label is capped at `Research Prototype`. A usable research signal requires live or cached data, freshness checks, historical validation, and human analyst review.
+
+## Methodology
+
+The total score combines four sector-relative components:
+
+| Component | Weight | Purpose |
+| --- | ---: | --- |
+| Google Trends / attention score | 40% | Measures relative investor-attention signals. |
+| Market momentum score | 25% | Summarises price momentum and risk-adjusted return. |
+| Fundamental score | 20% | Adds available ETF valuation, income, size, and beta context. |
+| Risk score | 15% | Considers volatility, downside volatility, drawdown, and beta. |
+
+Google Trends receives the highest weight because investor attention and sector monitoring are the core research focus. Market and fundamental data act as validation and risk filters. The synergy score checks whether Google Trends, momentum, fundamentals, and risk tell a consistent story.
+
+The output is intended to support human research workflows. Analysts should review source status, data limitations, and external evidence before drawing conclusions.
+
+## Output Files
+
+After running the pipeline, the prototype creates:
+
+- `data/processed/recommendation_scores.csv` - complete explainable sector ranking.
+- `reports/html/sector_monitoring_report.html` - HTML management report.
+
+The Streamlit dashboard reads the processed CSV.
+
+## Installation and Usage
+
+Create and activate a virtual environment, then install the required packages:
 
 ```bash
 python -m venv venv
 ```
 
-Activate the environment:
+Windows PowerShell:
+
+```powershell
+venv\Scripts\Activate.ps1
+```
+
+macOS/Linux:
 
 ```bash
-# Windows
-venv\Scripts\activate
-
-# macOS / Linux
 source venv/bin/activate
 ```
 
-Install dependencies:
+Install dependencies and run the prototype:
 
 ```bash
 pip install -r requirements.txt
+python src/pipeline.py --trend-mode auto
+python src/verify_outputs.py
+python -m pytest
+python -m streamlit run app/app.py
+python src/backtesting.py
 ```
 
-## Possible Dependencies
+## Demo Mode
 
-The final prototype may use the following Python libraries:
+Due to Google Trends rate limits, the prototype may use synthetic demo data. This is clearly flagged through `trend_data_status` and is intended only to demonstrate the pipeline and scoring logic.
 
-```text
-pandas
-numpy
-scikit-learn
-yfinance
-matplotlib
-plotly
-streamlit
-```
+## Backtesting
 
-## Usage
+`python src/backtesting.py` runs a market-only monthly sector-rotation backtest. It ranks sectors using historical momentum, volatility, drawdown, and risk-adjusted return, then compares the following month's selected-sector return against SPY and an equal-weight sector portfolio. It deliberately avoids look-ahead bias by ranking only from data available at each rebalance date.
 
-After the prototype has been implemented, the recommendation process may be started through a script such as:
+The current backtest does not validate Google Trends because stable historical trend data is not yet available.
 
-```bash
-python src/recommender.py
-```
+## Can this be used for stock purchasing?
 
-If a Streamlit dashboard is added, it may be launched with:
+No. The current prototype is not suitable for direct purchasing decisions. It becomes useful as a research-support tool only after live or cached data, backtesting, and analyst review are available. It does not execute trades.
 
-```bash
-streamlit run app/app.py
-```
+## Suggested Next Improvements
 
-## Example Output
+- Improve the reliability and refresh strategy for live Google Trends collection while respecting provider limits.
+- Add validated historical-data experiments and clearer data-version tracking.
+- Extend the fundamental validation layer with ETF-appropriate sources and coverage checks.
+- Add analyst feedback workflows, richer visualisations, and role-based review documentation.
+- Review the scoring assumptions with domain experts before any broader use.
 
-The system could generate an output similar to:
+## Team Notes
 
-```text
-Stock: Apple Inc.
-Sector: Technology
-Recommendation Score: 82/100
-Signal: Positive
-Reasoning:
-- Strong profitability indicators
-- Positive recent momentum
-- Stable market position
-- Moderate valuation risk
-```
-
-## Regulatory Considerations
-
-Since this prototype is designed for a banking-related use case, regulatory aspects are an important part of the project.
-
-Relevant topics include:
-
-* MiFID II and investment advisory requirements
-* Documentation and transparency obligations
-* Human-in-the-loop decision-making
-* Avoidance of misleading performance promises
-* Conflict-of-interest management
-* Data protection and responsible AI use
-
-The prototype should therefore be understood as a decision-support system, not as an autonomous investment advisor or trading system.
-
-## Limitations
-
-This project is a prototype and has several limitations:
-
-* No guarantee of prediction accuracy
-* No real-time trading functionality
-* Limited data scope
-* Simplified scoring logic
-* No production-ready risk management
-* No regulatory approval for financial advisory use
-
-Financial markets are complex, volatile, and influenced by many unpredictable factors. The results of this system should therefore always be interpreted critically.
-
-## Disclaimer
-
-This project is for educational and research purposes only.
-It does not constitute financial advice, investment advice, or a recommendation to buy or sell any financial instrument.
-
-Any investment decision should be made independently and, if necessary, with the support of a qualified financial advisor.
-
-## Roadmap
-
-* [ ] Define relevant data sources
-* [ ] Implement data collection
-* [ ] Add preprocessing pipeline
-* [ ] Calculate technical and fundamental indicators
-* [ ] Develop scoring model
-* [ ] Add explainability logic
-* [ ] Build dashboard prototype
-* [ ] Add documentation and presentation materials
-
-## Author
-
-Developed by **michel1001** as part of a university AI project.
-
-## License
-
-This repository is intended for academic and educational use.
-A license can be added later depending on the intended usage and publication scope.
+The project is designed for collaborative university work. Before presenting results, run the pipeline, verification script, and tests so that the CSV, dashboard, and report are based on the same generated output.

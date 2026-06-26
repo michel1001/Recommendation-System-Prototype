@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AI Sector Monitoring Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+    h1, h2 { color: #0f172a; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+    th { background-color: #f3f4f6; }
+    .note { background-color: #fef3c7; padding: 12px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>AI Sector Monitoring Report</h1>
+  <p><strong>Generated:</strong> 2026-06-26 19:00:26</p>
+  <div class="note">Educational prototype only. Not financial advice.</div>
+
+  <h2>Executive Summary</h2>
+  <p>This report summarizes the current Google Trends and market context for sector ETFs using an explainable, decision-support scoring pipeline.</p>
+  <ul>
+    <li><strong>Consumer Staples</strong> — score 64.2, trend 78.5, synergy Early attention signal</li><li><strong>Utilities</strong> — score 61.5, trend 59.4, synergy Balanced setup</li><li><strong>Materials</strong> — score 59.8, trend 61.6, synergy Balanced setup</li><li><strong>Healthcare</strong> — score 57.9, trend 55.8, synergy Balanced setup</li><li><strong>Technology</strong> — score 57.0, trend 67.8, synergy Balanced setup</li>
+  </ul>
+
+  <h2>Data Quality</h2>
+  <p>Trend-source status is shown explicitly so analysts can distinguish observed attention signals from demonstration data.</p>
+  <ul>
+    <li><strong>Demo data in use:</strong> 10 sector(s) use synthetic Google Trends data for prototype validation. These values are not real search interest.</li>
+  </ul>
+
+  <h2>Google Trends Operational Reliability</h2>
+  <p>Google Trends live access may be rate-limited because pytrends uses unofficial web requests. This prototype uses refresh modes and cache-first behavior to avoid unnecessary live requests. Demo mode is used only when live/cache data is unavailable or intentionally selected. The <code>trend_data_status</code> and <code>trend_cache_age_hours</code> fields document the quality and recency of each sector's attention signal.</p>
+  <ul>
+    <li><strong>Refresh mode(s) in this run:</strong> demo_only</li>
+    <li><strong>Freshness threshold:</strong> cached trends older than 168 hours should be refreshed.</li>
+    <li><strong>Stale cache warnings:</strong> 0</li>
+  </ul>
+  <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>sector</th>
+      <th>trend_data_status</th>
+      <th>trend_refresh_mode</th>
+      <th>trend_cache_age_hours</th>
+      <th>trend_last_date</th>
+      <th>trend_observations</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Consumer Staples</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+    <tr>
+      <td>Utilities</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+    <tr>
+      <td>Materials</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+    <tr>
+      <td>Healthcare</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+    <tr>
+      <td>Technology</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+    <tr>
+      <td>Financials</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+    <tr>
+      <td>Industrials</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+    <tr>
+      <td>Real Estate</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+    <tr>
+      <td>Consumer Discretionary</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+    <tr>
+      <td>Energy</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+      <td>260</td>
+    </tr>
+  </tbody>
+</table>
+
+  <h2>Actionability</h2>
+  <p>Research Prototype means demo/synthetic data or an unvalidated signal. Research Candidate requires live or cached data and remains subject to analyst review. A validated research candidate requires historical validation and analyst review.</p>
+  <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>sector</th>
+      <th>data_quality_status</th>
+      <th>actionability_status</th>
+      <th>price_data_status</th>
+      <th>market_last_date</th>
+      <th>trend_data_status</th>
+      <th>trend_refresh_mode</th>
+      <th>trend_cache_age_hours</th>
+      <th>trend_last_date</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Consumer Staples</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+    <tr>
+      <td>Utilities</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+    <tr>
+      <td>Materials</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+    <tr>
+      <td>Healthcare</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+    <tr>
+      <td>Technology</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+    <tr>
+      <td>Financials</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+    <tr>
+      <td>Industrials</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+    <tr>
+      <td>Real Estate</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+    <tr>
+      <td>Consumer Discretionary</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+    <tr>
+      <td>Energy</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>live</td>
+      <td>2026-06-26</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>2026-06-22</td>
+    </tr>
+  </tbody>
+</table>
+
+  <h2>Top-sector Interpretation</h2>
+  <p><strong>Consumer Staples</strong> ranks first because its combined relative score is 64.2. Its strongest component is Google Trends (78.5). Demo trend data used for prototype validation; do not interpret as real search interest. Its Google Trends input is synthetic demo data, so the attention signal is illustrative rather than observed. Human analyst review is required before any decision-support use.</p>
+
+  <h2>Top 5 Sectors</h2>
+  <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>sector</th>
+      <th>ticker</th>
+      <th>momentum_21</th>
+      <th>momentum_63</th>
+      <th>momentum_126</th>
+      <th>volatility_20</th>
+      <th>downside_volatility_20</th>
+      <th>drawdown_current</th>
+      <th>distance_to_ma_200</th>
+      <th>risk_adjusted_return_63</th>
+      <th>volume_momentum_20</th>
+      <th>trailingPE</th>
+      <th>forwardPE</th>
+      <th>priceToBook</th>
+      <th>dividendYield</th>
+      <th>beta</th>
+      <th>marketCap</th>
+      <th>trend_mean</th>
+      <th>trend_latest</th>
+      <th>trend_momentum_4w</th>
+      <th>trend_momentum_12w</th>
+      <th>trend_z_score_12w</th>
+      <th>trend_z_score_52w</th>
+      <th>trend_spike</th>
+      <th>trend_acceleration</th>
+      <th>trend_volatility</th>
+      <th>trend_percentile_52w</th>
+      <th>trend_observations</th>
+      <th>trend_last_date</th>
+      <th>trend_data_status</th>
+      <th>trend_refresh_mode</th>
+      <th>trend_cache_age_hours</th>
+      <th>trend_keywords</th>
+      <th>market_last_date</th>
+      <th>price_data_status</th>
+      <th>scoring_mode</th>
+      <th>momentum_score</th>
+      <th>risk_score</th>
+      <th>fundamental_score</th>
+      <th>trend_score</th>
+      <th>total_score</th>
+      <th>trend_signal</th>
+      <th>synergy_label</th>
+      <th>synergy_score</th>
+      <th>confidence_score</th>
+      <th>data_quality_status</th>
+      <th>actionability_status</th>
+      <th>recommendation</th>
+      <th>short_explanation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Consumer Staples</td>
+      <td>XLP</td>
+      <td>0.003015</td>
+      <td>0.045539</td>
+      <td>0.094504</td>
+      <td>0.183396</td>
+      <td>0.0</td>
+      <td>-0.057494</td>
+      <td>0.039038</td>
+      <td>0.248308</td>
+      <td>0.335519</td>
+      <td>25.529388</td>
+      <td>NaN</td>
+      <td>1.244335</td>
+      <td>2.62</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>52.086477</td>
+      <td>65.737269</td>
+      <td>0.154399</td>
+      <td>0.472637</td>
+      <td>2.126714</td>
+      <td>1.911389</td>
+      <td>True</td>
+      <td>-0.153641</td>
+      <td>6.003476</td>
+      <td>100.000000</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>food prices, consumer staples, grocery prices</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>42.122138</td>
+      <td>65.508565</td>
+      <td>62.089682</td>
+      <td>78.515359</td>
+      <td>64.180899</td>
+      <td>Strong Attention Spike</td>
+      <td>Early attention signal</td>
+      <td>70.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Utilities</td>
+      <td>XLU</td>
+      <td>0.020935</td>
+      <td>0.016656</td>
+      <td>0.081300</td>
+      <td>0.180244</td>
+      <td>0.0</td>
+      <td>-0.034465</td>
+      <td>0.032297</td>
+      <td>0.092406</td>
+      <td>0.361651</td>
+      <td>21.207748</td>
+      <td>NaN</td>
+      <td>0.720191</td>
+      <td>2.68</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>56.345864</td>
+      <td>60.364847</td>
+      <td>-0.043805</td>
+      <td>0.008302</td>
+      <td>0.102058</td>
+      <td>0.993227</td>
+      <td>False</td>
+      <td>-0.051381</td>
+      <td>1.390881</td>
+      <td>82.692308</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>electricity prices, utility stocks, renewable energy</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>40.099834</td>
+      <td>71.520702</td>
+      <td>84.772884</td>
+      <td>59.374461</td>
+      <td>61.457425</td>
+      <td>Falling Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Materials</td>
+      <td>XLB</td>
+      <td>0.007913</td>
+      <td>0.050825</td>
+      <td>0.127541</td>
+      <td>0.219694</td>
+      <td>0.0</td>
+      <td>-0.037952</td>
+      <td>0.069819</td>
+      <td>0.231344</td>
+      <td>0.339778</td>
+      <td>26.059546</td>
+      <td>NaN</td>
+      <td>0.652034</td>
+      <td>1.71</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>51.824722</td>
+      <td>56.169567</td>
+      <td>0.031285</td>
+      <td>0.294100</td>
+      <td>0.656506</td>
+      <td>0.641811</td>
+      <td>False</td>
+      <td>0.014657</td>
+      <td>5.321181</td>
+      <td>69.230769</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>commodity prices, mining stocks, raw materials</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>47.694719</td>
+      <td>66.083036</td>
+      <td>66.690020</td>
+      <td>61.564715</td>
+      <td>59.800025</td>
+      <td>Rising Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Healthcare</td>
+      <td>XLV</td>
+      <td>0.072653</td>
+      <td>0.095101</td>
+      <td>0.029744</td>
+      <td>0.199696</td>
+      <td>0.0</td>
+      <td>-0.003745</td>
+      <td>0.065650</td>
+      <td>0.476227</td>
+      <td>0.709838</td>
+      <td>25.741873</td>
+      <td>NaN</td>
+      <td>1.254165</td>
+      <td>1.68</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>52.044194</td>
+      <td>56.312544</td>
+      <td>-0.014661</td>
+      <td>0.241683</td>
+      <td>0.533175</td>
+      <td>0.649170</td>
+      <td>False</td>
+      <td>-0.130366</td>
+      <td>4.834754</td>
+      <td>67.307692</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>healthcare stocks, biotech, pharma</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>56.272082</td>
+      <td>76.792500</td>
+      <td>50.180788</td>
+      <td>55.785730</td>
+      <td>57.937345</td>
+      <td>Rising Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Technology</td>
+      <td>XLK</td>
+      <td>-0.011658</td>
+      <td>0.375698</td>
+      <td>0.248921</td>
+      <td>0.430346</td>
+      <td>0.0</td>
+      <td>-0.080369</td>
+      <td>0.209976</td>
+      <td>0.873015</td>
+      <td>0.382806</td>
+      <td>36.324540</td>
+      <td>NaN</td>
+      <td>1.220448</td>
+      <td>0.40</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>57.492345</td>
+      <td>69.914349</td>
+      <td>0.075250</td>
+      <td>0.097865</td>
+      <td>1.116853</td>
+      <td>1.040290</td>
+      <td>False</td>
+      <td>0.029969</td>
+      <td>2.925055</td>
+      <td>84.615385</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>artificial intelligence, semiconductors, cloud computing</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>86.854922</td>
+      <td>31.214152</td>
+      <td>17.572513</td>
+      <td>67.840201</td>
+      <td>57.046436</td>
+      <td>Rising Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+  </tbody>
+</table>
+
+  <h2>Bottom 3 Sectors</h2>
+  <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>sector</th>
+      <th>ticker</th>
+      <th>momentum_21</th>
+      <th>momentum_63</th>
+      <th>momentum_126</th>
+      <th>volatility_20</th>
+      <th>downside_volatility_20</th>
+      <th>drawdown_current</th>
+      <th>distance_to_ma_200</th>
+      <th>risk_adjusted_return_63</th>
+      <th>volume_momentum_20</th>
+      <th>trailingPE</th>
+      <th>forwardPE</th>
+      <th>priceToBook</th>
+      <th>dividendYield</th>
+      <th>beta</th>
+      <th>marketCap</th>
+      <th>trend_mean</th>
+      <th>trend_latest</th>
+      <th>trend_momentum_4w</th>
+      <th>trend_momentum_12w</th>
+      <th>trend_z_score_12w</th>
+      <th>trend_z_score_52w</th>
+      <th>trend_spike</th>
+      <th>trend_acceleration</th>
+      <th>trend_volatility</th>
+      <th>trend_percentile_52w</th>
+      <th>trend_observations</th>
+      <th>trend_last_date</th>
+      <th>trend_data_status</th>
+      <th>trend_refresh_mode</th>
+      <th>trend_cache_age_hours</th>
+      <th>trend_keywords</th>
+      <th>market_last_date</th>
+      <th>price_data_status</th>
+      <th>scoring_mode</th>
+      <th>momentum_score</th>
+      <th>risk_score</th>
+      <th>fundamental_score</th>
+      <th>trend_score</th>
+      <th>total_score</th>
+      <th>trend_signal</th>
+      <th>synergy_label</th>
+      <th>synergy_score</th>
+      <th>confidence_score</th>
+      <th>data_quality_status</th>
+      <th>actionability_status</th>
+      <th>recommendation</th>
+      <th>short_explanation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Real Estate</td>
+      <td>XLRE</td>
+      <td>0.008851</td>
+      <td>0.117523</td>
+      <td>0.120582</td>
+      <td>0.187130</td>
+      <td>0.0</td>
+      <td>-0.130959</td>
+      <td>0.064759</td>
+      <td>0.628029</td>
+      <td>0.472934</td>
+      <td>33.166820</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>3.18</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>48.829458</td>
+      <td>48.658881</td>
+      <td>-0.114938</td>
+      <td>-0.191623</td>
+      <td>-1.860377</td>
+      <td>-0.066413</td>
+      <td>False</td>
+      <td>0.123163</td>
+      <td>5.700872</td>
+      <td>44.230769</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>real estate market, REIT, mortgage rates</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>55.239430</td>
+      <td>47.063323</td>
+      <td>58.143901</td>
+      <td>40.799153</td>
+      <td>48.817797</td>
+      <td>Falling Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>80.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Consumer Discretionary</td>
+      <td>XLY</td>
+      <td>-0.051995</td>
+      <td>0.058807</td>
+      <td>-0.056806</td>
+      <td>0.237474</td>
+      <td>0.0</td>
+      <td>-0.074606</td>
+      <td>-0.019967</td>
+      <td>0.247636</td>
+      <td>0.366038</td>
+      <td>28.715010</td>
+      <td>NaN</td>
+      <td>0.685934</td>
+      <td>0.74</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>57.951605</td>
+      <td>68.270178</td>
+      <td>0.038229</td>
+      <td>0.207960</td>
+      <td>0.841482</td>
+      <td>0.980461</td>
+      <td>False</td>
+      <td>-0.066003</td>
+      <td>6.152548</td>
+      <td>78.846154</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>retail sales, consumer spending, ecommerce</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>19.035213</td>
+      <td>55.031193</td>
+      <td>49.553650</td>
+      <td>60.795899</td>
+      <td>47.242572</td>
+      <td>Rising Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Energy</td>
+      <td>XLE</td>
+      <td>-0.055624</td>
+      <td>-0.125163</td>
+      <td>0.209438</td>
+      <td>0.233505</td>
+      <td>0.0</td>
+      <td>-0.139706</td>
+      <td>0.052003</td>
+      <td>-0.536017</td>
+      <td>0.275393</td>
+      <td>20.111908</td>
+      <td>NaN</td>
+      <td>1.032716</td>
+      <td>2.65</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>50.457238</td>
+      <td>33.030000</td>
+      <td>-0.271358</td>
+      <td>-0.499561</td>
+      <td>-1.766798</td>
+      <td>-1.490779</td>
+      <td>False</td>
+      <td>0.221289</td>
+      <td>13.706100</td>
+      <td>7.692308</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>oil price, energy stocks, natural gas</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>23.676941</td>
+      <td>39.531957</td>
+      <td>77.631708</td>
+      <td>18.091214</td>
+      <td>34.611856</td>
+      <td>Falling Attention</td>
+      <td>Fundamental sleeper</td>
+      <td>70.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+  </tbody>
+</table>
+
+  <h2>Google Trends Signal Overview</h2>
+  <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>sector</th>
+      <th>trend_signal</th>
+      <th>trend_data_status</th>
+      <th>trend_refresh_mode</th>
+      <th>trend_cache_age_hours</th>
+      <th>trend_latest</th>
+      <th>trend_momentum_4w</th>
+      <th>synergy_label</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Consumer Staples</td>
+      <td>Strong Attention Spike</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>65.737269</td>
+      <td>0.154399</td>
+      <td>Early attention signal</td>
+    </tr>
+    <tr>
+      <td>Utilities</td>
+      <td>Falling Attention</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>60.364847</td>
+      <td>-0.043805</td>
+      <td>Balanced setup</td>
+    </tr>
+    <tr>
+      <td>Materials</td>
+      <td>Rising Attention</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>56.169567</td>
+      <td>0.031285</td>
+      <td>Balanced setup</td>
+    </tr>
+    <tr>
+      <td>Healthcare</td>
+      <td>Rising Attention</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>56.312544</td>
+      <td>-0.014661</td>
+      <td>Balanced setup</td>
+    </tr>
+    <tr>
+      <td>Technology</td>
+      <td>Rising Attention</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>69.914349</td>
+      <td>0.075250</td>
+      <td>Balanced setup</td>
+    </tr>
+    <tr>
+      <td>Financials</td>
+      <td>Falling Attention</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>55.884282</td>
+      <td>-0.031881</td>
+      <td>Balanced setup</td>
+    </tr>
+    <tr>
+      <td>Industrials</td>
+      <td>Rising Attention</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>58.587809</td>
+      <td>0.026974</td>
+      <td>Balanced setup</td>
+    </tr>
+    <tr>
+      <td>Real Estate</td>
+      <td>Falling Attention</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>48.658881</td>
+      <td>-0.114938</td>
+      <td>Balanced setup</td>
+    </tr>
+    <tr>
+      <td>Consumer Discretionary</td>
+      <td>Rising Attention</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>68.270178</td>
+      <td>0.038229</td>
+      <td>Balanced setup</td>
+    </tr>
+    <tr>
+      <td>Energy</td>
+      <td>Falling Attention</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>33.030000</td>
+      <td>-0.271358</td>
+      <td>Fundamental sleeper</td>
+    </tr>
+  </tbody>
+</table>
+
+  <h2>Synergy Analysis</h2>
+  <p>Synergy labels describe whether attention, momentum, and fundamentals point in the same direction. This helps research teams separate strong setups from hype-driven moves.</p>
+  <ul>
+    <li>Trend-confirmed opportunity: attention, momentum, and fundamentals are aligned.</li>
+    <li>Early attention signal: trend strength is high but momentum is still developing.</li>
+    <li>Hype risk: attention is strong but fundamentals are not supportive.</li>
+  </ul>
+
+  <h2>Full Ranking Table</h2>
+  <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>sector</th>
+      <th>ticker</th>
+      <th>momentum_21</th>
+      <th>momentum_63</th>
+      <th>momentum_126</th>
+      <th>volatility_20</th>
+      <th>downside_volatility_20</th>
+      <th>drawdown_current</th>
+      <th>distance_to_ma_200</th>
+      <th>risk_adjusted_return_63</th>
+      <th>volume_momentum_20</th>
+      <th>trailingPE</th>
+      <th>forwardPE</th>
+      <th>priceToBook</th>
+      <th>dividendYield</th>
+      <th>beta</th>
+      <th>marketCap</th>
+      <th>trend_mean</th>
+      <th>trend_latest</th>
+      <th>trend_momentum_4w</th>
+      <th>trend_momentum_12w</th>
+      <th>trend_z_score_12w</th>
+      <th>trend_z_score_52w</th>
+      <th>trend_spike</th>
+      <th>trend_acceleration</th>
+      <th>trend_volatility</th>
+      <th>trend_percentile_52w</th>
+      <th>trend_observations</th>
+      <th>trend_last_date</th>
+      <th>trend_data_status</th>
+      <th>trend_refresh_mode</th>
+      <th>trend_cache_age_hours</th>
+      <th>trend_keywords</th>
+      <th>market_last_date</th>
+      <th>price_data_status</th>
+      <th>scoring_mode</th>
+      <th>momentum_score</th>
+      <th>risk_score</th>
+      <th>fundamental_score</th>
+      <th>trend_score</th>
+      <th>total_score</th>
+      <th>trend_signal</th>
+      <th>synergy_label</th>
+      <th>synergy_score</th>
+      <th>confidence_score</th>
+      <th>data_quality_status</th>
+      <th>actionability_status</th>
+      <th>recommendation</th>
+      <th>short_explanation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Consumer Staples</td>
+      <td>XLP</td>
+      <td>0.003015</td>
+      <td>0.045539</td>
+      <td>0.094504</td>
+      <td>0.183396</td>
+      <td>0.0</td>
+      <td>-0.057494</td>
+      <td>0.039038</td>
+      <td>0.248308</td>
+      <td>0.335519</td>
+      <td>25.529388</td>
+      <td>NaN</td>
+      <td>1.244335</td>
+      <td>2.62</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>52.086477</td>
+      <td>65.737269</td>
+      <td>0.154399</td>
+      <td>0.472637</td>
+      <td>2.126714</td>
+      <td>1.911389</td>
+      <td>True</td>
+      <td>-0.153641</td>
+      <td>6.003476</td>
+      <td>100.000000</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>food prices, consumer staples, grocery prices</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>42.122138</td>
+      <td>65.508565</td>
+      <td>62.089682</td>
+      <td>78.515359</td>
+      <td>64.180899</td>
+      <td>Strong Attention Spike</td>
+      <td>Early attention signal</td>
+      <td>70.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Utilities</td>
+      <td>XLU</td>
+      <td>0.020935</td>
+      <td>0.016656</td>
+      <td>0.081300</td>
+      <td>0.180244</td>
+      <td>0.0</td>
+      <td>-0.034465</td>
+      <td>0.032297</td>
+      <td>0.092406</td>
+      <td>0.361651</td>
+      <td>21.207748</td>
+      <td>NaN</td>
+      <td>0.720191</td>
+      <td>2.68</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>56.345864</td>
+      <td>60.364847</td>
+      <td>-0.043805</td>
+      <td>0.008302</td>
+      <td>0.102058</td>
+      <td>0.993227</td>
+      <td>False</td>
+      <td>-0.051381</td>
+      <td>1.390881</td>
+      <td>82.692308</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>electricity prices, utility stocks, renewable energy</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>40.099834</td>
+      <td>71.520702</td>
+      <td>84.772884</td>
+      <td>59.374461</td>
+      <td>61.457425</td>
+      <td>Falling Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Materials</td>
+      <td>XLB</td>
+      <td>0.007913</td>
+      <td>0.050825</td>
+      <td>0.127541</td>
+      <td>0.219694</td>
+      <td>0.0</td>
+      <td>-0.037952</td>
+      <td>0.069819</td>
+      <td>0.231344</td>
+      <td>0.339778</td>
+      <td>26.059546</td>
+      <td>NaN</td>
+      <td>0.652034</td>
+      <td>1.71</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>51.824722</td>
+      <td>56.169567</td>
+      <td>0.031285</td>
+      <td>0.294100</td>
+      <td>0.656506</td>
+      <td>0.641811</td>
+      <td>False</td>
+      <td>0.014657</td>
+      <td>5.321181</td>
+      <td>69.230769</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>commodity prices, mining stocks, raw materials</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>47.694719</td>
+      <td>66.083036</td>
+      <td>66.690020</td>
+      <td>61.564715</td>
+      <td>59.800025</td>
+      <td>Rising Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Healthcare</td>
+      <td>XLV</td>
+      <td>0.072653</td>
+      <td>0.095101</td>
+      <td>0.029744</td>
+      <td>0.199696</td>
+      <td>0.0</td>
+      <td>-0.003745</td>
+      <td>0.065650</td>
+      <td>0.476227</td>
+      <td>0.709838</td>
+      <td>25.741873</td>
+      <td>NaN</td>
+      <td>1.254165</td>
+      <td>1.68</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>52.044194</td>
+      <td>56.312544</td>
+      <td>-0.014661</td>
+      <td>0.241683</td>
+      <td>0.533175</td>
+      <td>0.649170</td>
+      <td>False</td>
+      <td>-0.130366</td>
+      <td>4.834754</td>
+      <td>67.307692</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>healthcare stocks, biotech, pharma</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>56.272082</td>
+      <td>76.792500</td>
+      <td>50.180788</td>
+      <td>55.785730</td>
+      <td>57.937345</td>
+      <td>Rising Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Technology</td>
+      <td>XLK</td>
+      <td>-0.011658</td>
+      <td>0.375698</td>
+      <td>0.248921</td>
+      <td>0.430346</td>
+      <td>0.0</td>
+      <td>-0.080369</td>
+      <td>0.209976</td>
+      <td>0.873015</td>
+      <td>0.382806</td>
+      <td>36.324540</td>
+      <td>NaN</td>
+      <td>1.220448</td>
+      <td>0.40</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>57.492345</td>
+      <td>69.914349</td>
+      <td>0.075250</td>
+      <td>0.097865</td>
+      <td>1.116853</td>
+      <td>1.040290</td>
+      <td>False</td>
+      <td>0.029969</td>
+      <td>2.925055</td>
+      <td>84.615385</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>artificial intelligence, semiconductors, cloud computing</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>86.854922</td>
+      <td>31.214152</td>
+      <td>17.572513</td>
+      <td>67.840201</td>
+      <td>57.046436</td>
+      <td>Rising Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Financials</td>
+      <td>XLF</td>
+      <td>0.044049</td>
+      <td>0.094495</td>
+      <td>-0.031481</td>
+      <td>0.143388</td>
+      <td>0.0</td>
+      <td>-0.048138</td>
+      <td>0.021463</td>
+      <td>0.659018</td>
+      <td>0.347538</td>
+      <td>16.937517</td>
+      <td>NaN</td>
+      <td>1.578182</td>
+      <td>1.54</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>52.032128</td>
+      <td>55.884282</td>
+      <td>-0.031881</td>
+      <td>0.205885</td>
+      <td>0.482402</td>
+      <td>0.568335</td>
+      <td>False</td>
+      <td>-0.081152</td>
+      <td>5.736568</td>
+      <td>69.230769</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>bank stocks, interest rates, financial sector</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>46.534223</td>
+      <td>72.449537</td>
+      <td>54.655777</td>
+      <td>55.080863</td>
+      <td>55.464487</td>
+      <td>Falling Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Industrials</td>
+      <td>XLI</td>
+      <td>0.046586</td>
+      <td>0.131146</td>
+      <td>0.161985</td>
+      <td>0.232277</td>
+      <td>0.0</td>
+      <td>-0.009233</td>
+      <td>0.113013</td>
+      <td>0.564612</td>
+      <td>0.455118</td>
+      <td>31.679468</td>
+      <td>NaN</td>
+      <td>1.854201</td>
+      <td>1.18</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>51.777419</td>
+      <td>58.587809</td>
+      <td>0.026974</td>
+      <td>0.467443</td>
+      <td>0.932131</td>
+      <td>0.802770</td>
+      <td>False</td>
+      <td>-0.239519</td>
+      <td>5.611575</td>
+      <td>76.923077</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>manufacturing, industrial stocks, infrastructure</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>67.672295</td>
+      <td>71.662413</td>
+      <td>17.339084</td>
+      <td>59.103972</td>
+      <td>54.776841</td>
+      <td>Rising Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Real Estate</td>
+      <td>XLRE</td>
+      <td>0.008851</td>
+      <td>0.117523</td>
+      <td>0.120582</td>
+      <td>0.187130</td>
+      <td>0.0</td>
+      <td>-0.130959</td>
+      <td>0.064759</td>
+      <td>0.628029</td>
+      <td>0.472934</td>
+      <td>33.166820</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>3.18</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>48.829458</td>
+      <td>48.658881</td>
+      <td>-0.114938</td>
+      <td>-0.191623</td>
+      <td>-1.860377</td>
+      <td>-0.066413</td>
+      <td>False</td>
+      <td>0.123163</td>
+      <td>5.700872</td>
+      <td>44.230769</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>real estate market, REIT, mortgage rates</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>55.239430</td>
+      <td>47.063323</td>
+      <td>58.143901</td>
+      <td>40.799153</td>
+      <td>48.817797</td>
+      <td>Falling Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>80.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Consumer Discretionary</td>
+      <td>XLY</td>
+      <td>-0.051995</td>
+      <td>0.058807</td>
+      <td>-0.056806</td>
+      <td>0.237474</td>
+      <td>0.0</td>
+      <td>-0.074606</td>
+      <td>-0.019967</td>
+      <td>0.247636</td>
+      <td>0.366038</td>
+      <td>28.715010</td>
+      <td>NaN</td>
+      <td>0.685934</td>
+      <td>0.74</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>57.951605</td>
+      <td>68.270178</td>
+      <td>0.038229</td>
+      <td>0.207960</td>
+      <td>0.841482</td>
+      <td>0.980461</td>
+      <td>False</td>
+      <td>-0.066003</td>
+      <td>6.152548</td>
+      <td>78.846154</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>retail sales, consumer spending, ecommerce</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>19.035213</td>
+      <td>55.031193</td>
+      <td>49.553650</td>
+      <td>60.795899</td>
+      <td>47.242572</td>
+      <td>Rising Attention</td>
+      <td>Balanced setup</td>
+      <td>60.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+    <tr>
+      <td>Energy</td>
+      <td>XLE</td>
+      <td>-0.055624</td>
+      <td>-0.125163</td>
+      <td>0.209438</td>
+      <td>0.233505</td>
+      <td>0.0</td>
+      <td>-0.139706</td>
+      <td>0.052003</td>
+      <td>-0.536017</td>
+      <td>0.275393</td>
+      <td>20.111908</td>
+      <td>NaN</td>
+      <td>1.032716</td>
+      <td>2.65</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>50.457238</td>
+      <td>33.030000</td>
+      <td>-0.271358</td>
+      <td>-0.499561</td>
+      <td>-1.766798</td>
+      <td>-1.490779</td>
+      <td>False</td>
+      <td>0.221289</td>
+      <td>13.706100</td>
+      <td>7.692308</td>
+      <td>260</td>
+      <td>2026-06-22</td>
+      <td>demo</td>
+      <td>demo_only</td>
+      <td>NaN</td>
+      <td>oil price, energy stocks, natural gas</td>
+      <td>2026-06-26</td>
+      <td>live</td>
+      <td>research</td>
+      <td>23.676941</td>
+      <td>39.531957</td>
+      <td>77.631708</td>
+      <td>18.091214</td>
+      <td>34.611856</td>
+      <td>Falling Attention</td>
+      <td>Fundamental sleeper</td>
+      <td>70.0</td>
+      <td>82.0</td>
+      <td>Prototype only</td>
+      <td>Not actionable</td>
+      <td>Research Prototype</td>
+      <td>Demo trend data used for prototype validation; do not interpret as real search interest.</td>
+    </tr>
+  </tbody>
+</table>
+
+  <h2>Methodology</h2>
+  <p>The score blends Google Trends attention, relative momentum, fundamentals, and risk controls. Trend data is treated as the main signal, while market and fundamental signals act as validation and risk filters.</p>
+  <p><em>Demo trend data is used only when Google Trends live access is unavailable, to keep the prototype demonstrable. It is clearly flagged and must not be interpreted as real market attention.</em></p>
+
+  <h2>How Analysts Should Interpret the Output</h2>
+  <ul>
+    <li><strong>Overweight Candidate:</strong> candidate for deeper analyst review and possible sector overweight.</li>
+    <li><strong>Watch:</strong> monitor closely, but no automatic action.</li>
+    <li><strong>Neutral:</strong> keep under observation or benchmark-level exposure.</li>
+    <li><strong>Avoid:</strong> deprioritize unless supported by external analyst conviction.</li>
+  </ul>
+
+  <h2>Data Quality Interpretation</h2>
+  <ul>
+    <li><strong>live:</strong> real Google Trends data from the current API request.</li>
+    <li><strong>cache:</strong> previously loaded Google Trends data.</li>
+    <li><strong>demo:</strong> synthetic prototype data used when live Google Trends is unavailable.</li>
+    <li><strong>fallback:</strong> neutral placeholder and weakest data quality.</li>
+  </ul>
+  <p>Dashboard command: <code>python -m streamlit run app/app.py</code></p>
+
+  <h2>Data Status</h2>
+  <ul>
+    <li>Live Google Trends data sectors: 0</li>
+    <li>Cache-backed sectors: 0</li>
+    <li>Demo sectors: 10</li>
+    <li>Fallback sectors: 0</li>
+    <li>Live sectors: none</li>
+    <li>Cache sectors: none</li>
+    <li>Demo sectors: Consumer Discretionary, Consumer Staples, Energy, Financials, Healthcare, Industrials, Materials, Real Estate, Technology, Utilities</li>
+    <li>Fallback sectors: none</li>
+  </ul>
+
+  <h2>Backtest</h2>
+  <p>This is a market-only historical backtest. Google Trends validation requires stable historical trend data and is not yet fully implemented.</p>
+  <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>strategy</th>
+      <th>cumulative_return</th>
+      <th>annualized_return</th>
+      <th>annualized_volatility</th>
+      <th>sharpe_ratio</th>
+      <th>max_drawdown</th>
+      <th>win_rate</th>
+      <th>number_of_rebalances</th>
+      <th>turnover</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Monthly top sectors</td>
+      <td>1.579474</td>
+      <td>0.127153</td>
+      <td>0.159668</td>
+      <td>0.796358</td>
+      <td>-0.161900</td>
+      <td>0.621053</td>
+      <td>95</td>
+      <td>0.421986</td>
+    </tr>
+    <tr>
+      <td>Equal-weight sectors</td>
+      <td>1.499732</td>
+      <td>0.122691</td>
+      <td>0.160784</td>
+      <td>0.763082</td>
+      <td>-0.231668</td>
+      <td>0.652632</td>
+      <td>95</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>SPY benchmark</td>
+      <td>1.948089</td>
+      <td>0.146332</td>
+      <td>0.168063</td>
+      <td>0.870695</td>
+      <td>-0.239272</td>
+      <td>0.663158</td>
+      <td>95</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+  <p>Run: <code>python src/backtesting.py</code></p>
+
+  <h2>Risks & Limitations</h2>
+  <ul>
+    <li>No real trading or order logic is implemented.</li>
+    <li>Google Trends data can be delayed or incomplete.</li>
+    <li>Fundamentals may be sparse for ETFs.</li>
+    <li>Decision support only. Human review remains essential.</li>
+  </ul>
+</body>
+</html>

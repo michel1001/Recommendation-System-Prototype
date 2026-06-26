@@ -1,6 +1,4 @@
-"""
-Recommendation System Prototype
-An AI-powered stock and sector recommendation engine for investment decision support.
-"""
+"""Recommendation System Prototype package."""
 
 __version__ = "0.1.0"
+__all__ = ["data_loader", "preprocessing", "indicators", "scoring", "recommender"]

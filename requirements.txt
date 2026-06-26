@@ -16,6 +16,12 @@ plotly>=5.0.0
 streamlit>=1.0.0
 dash>=2.0.0
 
+# Trends and reporting
+# pytrends 4.x still relies on urllib3's pre-2.0 retry API.
+pytrends==4.9.2
+urllib3<2
+jinja2>=3.1.0
+
 # Development
 jupyter>=1.0.0
 pytest>=6.0.0
