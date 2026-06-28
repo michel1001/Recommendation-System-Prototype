@@ -1,0 +1,3 @@
+strategy,cumulative_excess_return,average_excess_return,volatility,hit_rate,periods,feature_set
+ML top sectors,-0.18660872507566717,-0.006148370805861821,0.031694409557028805,0.45161290322580644,31,market_fundamental
+Equal-weight sector excess,-0.14489022089046233,-0.004733151198109841,0.024967489941215327,0.4838709677419355,31,market_fundamental

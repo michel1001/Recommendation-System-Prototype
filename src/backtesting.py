@@ -100,13 +100,13 @@ def run_monthly_rotation_backtest(top_n: int = 3, start: str = "2018-01-01", end
         equal_return = float((equal_end / equal_start - 1).mean())
         spy_start, spy_end = benchmark_prices.loc[:current].iloc[-1], benchmark_prices.loc[:following].iloc[-1]
         turnover = 1 - len(previous_selection.intersection(selected)) / top_n if previous_selection else np.nan
-        records.append({"rebalance_date": current, "holding_end_date": following, "selected_tickers": ", ".join(selected), "portfolio_return": portfolio_return, "equal_weight_return": equal_return, "spy_return": float(spy_end / spy_start - 1), "turnover": turnover})
+        records.append({"rebalance_date": current, "holding_end_date": following, "selected_tickers": ", ".join(selected), "portfolio_return": portfolio_return, "equal_weight_return": equal_return, "spy_return": float(spy_end / spy_start - 1), "turnover": turnover, "backtest_feature_set": "market_fundamental"})
         previous_selection = set(selected)
     result = pd.DataFrame(records)
     if not result.empty:
         for column in ("portfolio_return", "equal_weight_return", "spy_return"):
             result[f"{column}_cumulative"] = (1 + result[column]).cumprod() - 1
-    metrics = pd.DataFrame([{"strategy": "Monthly top sectors", **calculate_performance_metrics(result.get("portfolio_return", pd.Series(dtype=float)))}, {"strategy": "Equal-weight sectors", **calculate_performance_metrics(result.get("equal_weight_return", pd.Series(dtype=float)))}, {"strategy": "SPY benchmark", **calculate_performance_metrics(result.get("spy_return", pd.Series(dtype=float)))}])
+    metrics = pd.DataFrame([{"strategy": "Monthly top sectors", "backtest_feature_set": "market_fundamental", **calculate_performance_metrics(result.get("portfolio_return", pd.Series(dtype=float)))}, {"strategy": "Equal-weight sectors", "backtest_feature_set": "market_fundamental", **calculate_performance_metrics(result.get("equal_weight_return", pd.Series(dtype=float)))}, {"strategy": "SPY benchmark", "backtest_feature_set": "market_fundamental", **calculate_performance_metrics(result.get("spy_return", pd.Series(dtype=float)))}])
     if not result.empty:
         metrics.loc[0, "turnover"] = result["turnover"].mean()
     return {"results": result, "metrics": metrics}

@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from src.config import TREND_CACHE_MAX_AGE_HOURS
+from src.config import ML_EVALUATION_METRICS_PATH, ML_FEATURE_IMPORTANCE_PATH, TREND_CACHE_MAX_AGE_HOURS
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "recommendation_scores.csv"
 
@@ -14,7 +14,7 @@ st.title("AI Sector Monitoring Dashboard")
 st.caption("Decision support only. No autonomous trading. Not financial advice.")
 
 if not DATA_PATH.exists():
-    st.warning("No ranking data found. Run `python src/pipeline.py --trend-mode auto` first, or use `--trend-mode demo_only` for a presentation-safe run.")
+    st.warning("No ranking data found. Run `python src/pipeline.py --mode market_fundamental` first, or use `python src/pipeline.py --mode demo` for a presentation-safe run.")
     st.stop()
 
 ranking = pd.read_csv(DATA_PATH).sort_values("total_score", ascending=False).reset_index(drop=True)
@@ -23,12 +23,48 @@ if "trend_refresh_mode" not in ranking:
     ranking["trend_refresh_mode"] = "unknown"
 if "trend_cache_age_hours" not in ranking:
     ranking["trend_cache_age_hours"] = pd.NA
+if "trend_provider" not in ranking:
+    ranking["trend_provider"] = ranking["trend_data_status"]
+if "trend_source_detail" not in ranking:
+    ranking["trend_source_detail"] = ""
+if "operating_mode" not in ranking:
+    ranking["operating_mode"] = "market_fundamental"
+if "scoring_profile" not in ranking:
+    ranking["scoring_profile"] = "market_fundamental_only"
+for column, default in {
+    "ml_predicted_outperform_probability": pd.NA,
+    "ml_predicted_excess_return_4w": pd.NA,
+    "ml_model_status": "not_trained",
+    "ml_model_confidence": 0.0,
+    "ml_feature_set": "",
+    "sentiment_score_component": 0.0,
+    "sentiment_data_status": "not_used",
+    "sentiment_provider": "disabled_by_mode",
+    "sentiment_article_count": 0,
+    "sentiment_bullish_percent": pd.NA,
+    "sentiment_bearish_percent": pd.NA,
+    "sentiment_buzz": pd.NA,
+    "sentiment_coverage_count": 0,
+}.items():
+    if column not in ranking:
+        ranking[column] = default
 ranking["trend_cache_age_hours"] = pd.to_numeric(ranking["trend_cache_age_hours"], errors="coerce")
 ranking["synergy_label"] = ranking["synergy_label"].fillna("Balanced setup")
 status_counts = ranking["trend_data_status"].value_counts()
 demo_count, fallback_count = status_counts.get("demo", 0), status_counts.get("fallback", 0)
 refresh_modes = ", ".join(sorted(ranking["trend_refresh_mode"].dropna().astype(str).unique()))
+operating_modes = ", ".join(sorted(ranking["operating_mode"].dropna().astype(str).unique()))
+operating_mode_values = set(ranking["operating_mode"].dropna().astype(str).str.lower())
+if operating_mode_values == {"market_fundamental"}:
+    methodology_text = "The ranking combines market momentum, risk, relative strength versus SPY, available fundamentals, and ML-based research signals. Google Trends are not used in this run; scores are relative, explainable research signals, and no trading or orders are executed."
+elif operating_mode_values == {"full"}:
+    methodology_text = "The ranking combines Google Trends attention with market momentum, risk, fundamentals, and ML-based research signals. Scores are relative, explainable research signals; no trading or orders are executed."
+elif operating_mode_values == {"demo"}:
+    methodology_text = "The ranking demonstrates the full trend-market-fundamental pipeline using synthetic demo Google Trends data. Demo trend values are not real search interest; no trading or orders are executed."
+else:
+    methodology_text = "The ranking combines the configured sector ETF research signals for the selected operating mode. Scores are relative, explainable research signals; no trading or orders are executed."
 st.caption(f"Trend refresh mode: {refresh_modes or 'unknown'}")
+st.caption(f"Operating mode: {operating_modes or 'unknown'}")
 
 if fallback_count or (ranking.get("price_data_status", pd.Series("live", index=ranking.index)).eq("missing").sum() > len(ranking) / 2):
     current_mode = "Insufficient Data Mode"
@@ -37,6 +73,8 @@ elif demo_count:
 else:
     current_mode = "Research Mode"
 st.warning(f"Current mode: **{current_mode}**. Current outputs are research signals, not purchasing recommendations.")
+if ranking["operating_mode"].astype(str).str.lower().eq("market_fundamental").all():
+    st.info("Current mode: **Market/Fundamental Only**. Google Trends are not used in this run. This is the reliable baseline mode when real trend data is unavailable.")
 
 if ranking["trend_refresh_mode"].astype(str).str.lower().eq("demo_only").all() or demo_count == len(ranking):
     st.warning("Demo-only trend data is displayed. Google Trends values are synthetic prototype data and must not be interpreted as real search interest.")
@@ -67,15 +105,48 @@ else:
 st.info(f"{best_sector['sector']} ranks first because its combined relative score is {best_sector['total_score']:.1f}; {strongest_component} is its strongest component ({strongest_score:.1f}). {best_sector['short_explanation']} {limitation} Human analyst review is required before any decision-support use.")
 
 st.subheader("Google Trends data status")
-status_metrics = st.columns(5)
-for column, status in zip(status_metrics, ("live", "cache", "demo", "fallback")):
+status_metrics = st.columns(6)
+for column, status in zip(status_metrics, ("manual_csv", "live_pytrends", "cache", "demo", "fallback")):
     column.metric(f"{status.title()} Trend Sectors", int(status_counts.get(status, 0)))
 fresh_cache_count = int((ranking["trend_data_status"].eq("cache") & ranking["trend_cache_age_hours"].le(TREND_CACHE_MAX_AGE_HOURS)).sum())
-status_metrics[4].metric("Fresh Cache Sectors", fresh_cache_count)
+status_metrics[5].metric("Fresh Cache Sectors", fresh_cache_count)
 
 st.subheader("Ranking")
-display_columns = ["sector", "ticker", "total_score", "trend_score", "momentum_score", "risk_score", "fundamental_score", "confidence_score", "recommendation", "data_quality_status", "actionability_status", "trend_data_status", "trend_refresh_mode", "trend_cache_age_hours"]
+display_columns = ["sector", "ticker", "operating_mode", "scoring_profile", "total_score", "trend_score", "sentiment_score_component", "momentum_score", "risk_score", "fundamental_score", "confidence_score", "recommendation", "data_quality_status", "actionability_status", "trend_data_status", "trend_provider", "trend_refresh_mode", "trend_cache_age_hours", "sentiment_data_status", "sentiment_provider", "ml_model_status", "ml_feature_set", "ml_predicted_outperform_probability", "ml_predicted_excess_return_4w"]
 st.dataframe(ranking[display_columns], width="stretch", hide_index=True)
+
+st.markdown("---")
+st.header("AI Model")
+ml_statuses = ", ".join(sorted(ranking["ml_model_status"].fillna("not_trained").astype(str).unique()))
+ml_feature_sets = ", ".join(sorted(ranking.get("ml_feature_set", pd.Series("", index=ranking.index)).fillna("").astype(str).unique()))
+st.write(f"ML model status: **{ml_statuses}**")
+st.write(f"ML feature set: **{ml_feature_sets or 'not available'}**")
+st.caption("The ML model predicts historical sector outperformance probabilities and expected 4-week excess returns. It does not guarantee future performance.")
+if "demo" in ranking["trend_data_status"].astype(str).str.lower().unique():
+    st.warning("Some or all trend inputs are synthetic demo data. ML research signals are prototype-only and need analyst review.")
+ml_columns = ["sector", "ticker", "ml_predicted_outperform_probability", "ml_predicted_excess_return_4w", "ml_model_confidence", "ml_model_status", "data_quality_status", "actionability_status"]
+st.dataframe(ranking[ml_columns], width="stretch", hide_index=True)
+if ML_EVALUATION_METRICS_PATH.exists():
+    st.subheader("Model evaluation metrics")
+    st.dataframe(pd.read_csv(ML_EVALUATION_METRICS_PATH), width="stretch", hide_index=True)
+else:
+    st.info("ML evaluation metrics are not available yet. Run `python src/ml_dataset.py`, `python src/ml_model.py`, and `python src/ml_evaluation.py`.")
+if ML_FEATURE_IMPORTANCE_PATH.exists():
+    importance = pd.read_csv(ML_FEATURE_IMPORTANCE_PATH)
+    if not importance.empty:
+        st.subheader("Feature importance")
+        st.bar_chart(importance.head(12).set_index("feature")["importance"])
+
+st.markdown("---")
+st.header("News & Social Sentiment")
+st.warning("Finnhub sentiment is provided by an external vendor. The exact scoring methodology is not fully transparent and should be treated as a supporting signal.")
+sentiment_statuses = ranking["sentiment_data_status"].fillna("not_used").astype(str).str.lower()
+if sentiment_statuses.eq("not_used").all() or sentiment_statuses.eq("disabled_no_api_key").all():
+    st.info("Sentiment module disabled. Add `FINNHUB_API_KEY=your_key_here` to `config/.env` or set it in PowerShell, then run `python src/pipeline.py --mode full --use-sentiment`.")
+else:
+    sentiment_columns = ["sector", "sentiment_data_status", "sentiment_provider", "sentiment_score_component", "sentiment_bullish_percent", "sentiment_bearish_percent", "sentiment_article_count", "sentiment_buzz", "sentiment_coverage_count"]
+    st.dataframe(ranking[sentiment_columns], width="stretch", hide_index=True)
+    st.bar_chart(ranking.set_index("sector")["sentiment_score_component"])
 
 st.subheader("Score distribution")
 charts = st.columns(3)
@@ -98,6 +169,8 @@ detail_columns[1].write(f"Trend cache age: {cache_age:.1f} hours" if pd.notna(ca
 detail_columns[1].write(f"Trend keywords: {selected.get('trend_keywords', '')}")
 detail_columns[0].write(f"Data quality: **{selected.get('data_quality_status', 'Unavailable')}**")
 detail_columns[0].write(f"Actionability: **{selected.get('actionability_status', 'Unavailable')}**")
+detail_columns[0].write(f"ML predicted outperform probability: **{selected.get('ml_predicted_outperform_probability', pd.NA)}**")
+detail_columns[0].write(f"ML predicted 4-week excess return: **{selected.get('ml_predicted_excess_return_4w', pd.NA)}**")
 detail_columns[1].write(f"Price data status: **{selected.get('price_data_status', 'Unavailable')}**")
 detail_columns[1].write(f"Market last date: {selected.get('market_last_date', 'Unavailable')}")
 detail_columns[1].write(f"Trend last date: {selected.get('trend_last_date', 'Unavailable')}")
@@ -107,13 +180,13 @@ feature_columns = ["trend_latest", "trend_momentum_4w", "trend_momentum_12w", "t
 st.json({column: selected.get(column) for column in feature_columns if column in selected.index})
 
 st.markdown("### Methodology")
-st.write("The ranking combines Google Trends attention with market momentum, risk, and basic fundamental validation. Scores are relative, explainable research signals; no trading or orders are executed.")
+st.write(methodology_text)
 
 st.markdown("### How analysts should interpret the output")
-st.markdown("- **Overweight Candidate:** candidate for deeper analyst review and possible sector overweight.\n- **Watch:** monitor closely, but no automatic action.\n- **Neutral:** keep under observation or benchmark-level exposure.\n- **Avoid:** deprioritize unless supported by external analyst conviction.")
+st.markdown("- **Research Candidate:** candidate for deeper analyst review; not an automatic action.\n- **Watch:** monitor closely, but no automatic action.\n- **Neutral:** keep under observation or benchmark-level exposure.\n- **Avoid:** deprioritize unless supported by external analyst conviction.\n- **Research Prototype:** demo/prototype-only signal.\n- **Insufficient Data:** not enough usable input data.")
 
 st.markdown("### Data quality interpretation")
-st.markdown("- **live:** real Google Trends data from the current API request.\n- **cache:** previously loaded Google Trends data.\n- **demo:** synthetic prototype data used when live Google Trends is unavailable.\n- **fallback:** neutral placeholder and weakest data quality.")
+st.markdown("- **manual_csv:** real Google Trends data exported manually from Google Trends.\n- **live_pytrends:** real Google Trends data from a current pytrends request.\n- **external_api:** future external Trends provider integration.\n- **cache:** previously loaded Google Trends data.\n- **demo:** synthetic prototype data used when live Google Trends is unavailable.\n- **fallback:** neutral placeholder and weakest data quality.")
 st.caption("Dashboard command: `python -m streamlit run app/app.py`")
 
 st.markdown("---")

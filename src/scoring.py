@@ -4,13 +4,16 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from src.config import DATA_FRESHNESS_DAYS, SCORING_MODE, SCORING_WEIGHTS
+from src.config import DATA_FRESHNESS_DAYS, OPERATING_MODE, SCORING_MODE, SCORING_WEIGHTS, SCORING_WEIGHTS_BY_MODE
 from src.preprocessing import safe_last_value
 from src.trends_loader import calculate_trend_features
 
 
 MARKET_FIELDS = ["momentum_21", "momentum_63", "momentum_126", "volatility_20", "downside_volatility_20", "drawdown_current", "distance_to_ma_200", "risk_adjusted_return_63", "volume_momentum_20"]
 FUNDAMENTAL_FIELDS = ["trailingPE", "forwardPE", "priceToBook", "dividendYield", "beta", "marketCap"]
+LIVE_TREND_STATUSES = {"live", "live_pytrends", "manual_csv", "external_api"}
+CACHED_TREND_STATUSES = {"cache"}
+USABLE_SENTIMENT_STATUSES = {"live", "cache", "available", "demo"}
 
 
 def minmax_score(series: pd.Series | list[float], higher_is_better: bool = True) -> pd.Series:
@@ -58,6 +61,9 @@ def calculate_fundamental_score(feature_df: pd.DataFrame) -> pd.Series:
 
 
 def calculate_trend_score(feature_df: pd.DataFrame) -> pd.Series:
+    statuses = feature_df.get("trend_data_status", pd.Series("fallback", index=feature_df.index)).fillna("fallback").astype(str).str.lower()
+    if statuses.eq("not_used").all():
+        return pd.Series(0.0, index=feature_df.index)
     scores = pd.DataFrame(index=feature_df.index)
     for field in ["trend_z_score_12w", "trend_z_score_52w", "trend_momentum_4w", "trend_momentum_12w", "trend_acceleration", "trend_percentile_52w"]:
         if field in feature_df:
@@ -67,9 +73,17 @@ def calculate_trend_score(feature_df: pd.DataFrame) -> pd.Series:
     if "trend_volatility" in feature_df:
         scores["stability"] = minmax_score(feature_df["trend_volatility"], False)
     result = scores.mean(axis=1).fillna(50.0)
-    statuses = feature_df.get("trend_data_status", pd.Series("fallback", index=feature_df.index)).fillna("fallback").str.lower()
     result.loc[statuses == "fallback"] = 50.0
     result.loc[statuses == "demo"] *= .95
+    return result.clip(0, 100)
+
+
+def calculate_sentiment_score(feature_df: pd.DataFrame) -> pd.Series:
+    statuses = feature_df.get("sentiment_data_status", pd.Series("not_used", index=feature_df.index)).fillna("not_used").astype(str).str.lower()
+    raw_score = pd.to_numeric(feature_df.get("sentiment_score_component", pd.Series(np.nan, index=feature_df.index)), errors="coerce")
+    fallback_score = pd.to_numeric(feature_df.get("sentiment_score", pd.Series(np.nan, index=feature_df.index)), errors="coerce") * 100
+    result = raw_score.fillna(fallback_score)
+    result.loc[~statuses.isin(USABLE_SENTIMENT_STATUSES)] = np.nan
     return result.clip(0, 100)
 
 
@@ -100,18 +114,25 @@ def assess_data_quality(row: pd.Series | dict[str, Any]) -> str:
     """Classify source completeness and freshness before interpreting a score."""
     data = dict(row)
     trend_status = str(data.get("trend_data_status", "fallback")).lower()
+    operating_mode = str(data.get("operating_mode", "full")).lower()
+    key_market_fields = ("momentum_21", "momentum_63", "volatility_20", "drawdown_current")
+    if operating_mode == "market_fundamental":
+        if str(data.get("price_data_status", "missing")).lower() == "missing" or any(pd.isna(data.get(field)) for field in key_market_fields):
+            return "Insufficient data"
+        if _is_stale(data.get("market_last_date")):
+            return "Stale data"
+        return "Market/fundamental research signal"
     if trend_status == "demo":
         return "Prototype only"
     if trend_status == "fallback" or str(data.get("price_data_status", "missing")).lower() == "missing":
         return "Insufficient data"
-    key_market_fields = ("momentum_21", "momentum_63", "volatility_20", "drawdown_current")
     if any(pd.isna(data.get(field)) for field in key_market_fields):
         return "Insufficient data"
     if _is_stale(data.get("trend_last_date")) or _is_stale(data.get("market_last_date")):
         return "Stale data"
-    if trend_status == "live":
+    if trend_status in LIVE_TREND_STATUSES:
         return "Live research signal"
-    if trend_status == "cache":
+    if trend_status in CACHED_TREND_STATUSES:
         return "Cached research signal"
     return "Insufficient data"
 
@@ -119,8 +140,11 @@ def assess_data_quality(row: pd.Series | dict[str, Any]) -> str:
 def assess_actionability(row: pd.Series | dict[str, Any], backtest_validated: bool = False) -> str:
     """Limit outputs to research use unless data and validation are adequate."""
     data = dict(row)
-    if data.get("data_quality_status") in {"Prototype only", "Insufficient data", "Stale data"}:
+    quality = data.get("data_quality_status")
+    if quality in {"Prototype only", "Insufficient data", "Stale data"}:
         return "Not actionable"
+    if quality == "Market/fundamental research signal":
+        return "Suitable for analyst review" if backtest_validated else "Research only"
     if not backtest_validated:
         return "Research only"
     if float(data.get("total_score", 0)) >= 70 and float(data.get("confidence_score", 0)) >= 70:
@@ -128,8 +152,10 @@ def assess_actionability(row: pd.Series | dict[str, Any], backtest_validated: bo
     return "Suitable for analyst review"
 
 
-def assign_recommendation(total_score: float, confidence_score: float = 0, synergy_label: str | None = None, actionability_status: str | None = None, trend_data_status: str | None = None) -> str:
+def assign_recommendation(total_score: float, confidence_score: float = 0, synergy_label: str | None = None, actionability_status: str | None = None, trend_data_status: str | None = None, operating_mode: str | None = None) -> str:
     """Return research labels only; never an instruction to trade."""
+    if str(operating_mode).lower() == "demo":
+        return "Research Prototype"
     if str(trend_data_status).lower() == "fallback":
         return "Insufficient Data"
     if str(trend_data_status).lower() == "demo" or actionability_status == "Not actionable":
@@ -148,12 +174,16 @@ def calculate_confidence_score(row: pd.Series | dict[str, Any]) -> float:
     filled = sum(pd.notna(data.get(field)) for field in MARKET_FIELDS) * 4 + sum(pd.notna(data.get(field)) for field in FUNDAMENTAL_FIELDS) * 2
     confidence = 40 + min(filled, 45) + (8 if pd.notna(data.get("trend_latest")) else 0)
     status = str(data.get("trend_data_status", "fallback")).lower()
-    confidence += {"live": 6, "cache": 4, "demo": -8, "fallback": -22}.get(status, -22)
+    if str(data.get("operating_mode", "full")).lower() == "market_fundamental":
+        return float(np.clip(45 + min(filled, 50), 0, 100))
+    confidence += {"live": 6, "live_pytrends": 6, "manual_csv": 6, "external_api": 6, "cache": 4, "demo": -8, "fallback": -22}.get(status, -22)
     return float(np.clip(confidence, 0, 100))
 
 
 def classify_trend_signal(row: pd.Series | dict[str, Any]) -> str:
     data = dict(row)
+    if str(data.get("trend_data_status", "")).lower() == "not_used":
+        return "Trend data not used in market/fundamental mode"
     if pd.isna(data.get("trend_latest")): return "No Trend Data"
     if data.get("trend_spike"): return "Strong Attention Spike"
     if data.get("trend_momentum_4w", 0) > 0 or data.get("trend_z_score_12w", 0) >= .5: return "Rising Attention"
@@ -163,7 +193,11 @@ def classify_trend_signal(row: pd.Series | dict[str, Any]) -> str:
 
 def generate_explanation(row: pd.Series | dict[str, Any]) -> str:
     data = dict(row); status = str(data.get("trend_data_status", "fallback")).lower(); label = data.get("synergy_label")
+    if str(data.get("operating_mode", "full")).lower() == "market_fundamental":
+        return "Market/fundamental-only mode: Google Trends not used."
     if status == "demo": return "Demo trend data used for prototype validation; do not interpret as real search interest."
+    if status == "manual_csv": return "Manual Google Trends CSV data used; analyst should confirm keyword/timeframe consistency."
+    if status == "live_pytrends": return "Live pytrends data used; analyst should review Google Trends rate-limit and coverage context."
     if label == "Trend-confirmed opportunity": return "Strong Google Trends attention and positive market momentum support this sector."
     if label == "Early attention signal": return "Rising attention but weak price momentum suggests an early watch signal."
     if label == "Hype risk": return "High attention combined with weak fundamentals indicates hype risk."
@@ -171,20 +205,33 @@ def generate_explanation(row: pd.Series | dict[str, Any]) -> str:
     return "Mixed relative signals warrant continued analyst monitoring."
 
 
-def calculate_relative_scores(feature_df: pd.DataFrame) -> pd.DataFrame:
+def calculate_relative_scores(feature_df: pd.DataFrame, operating_mode: str | None = None) -> pd.DataFrame:
     scored = feature_df.copy()
+    operating_mode = (operating_mode or (scored["operating_mode"].iloc[0] if "operating_mode" in scored and not scored.empty else OPERATING_MODE))
+    weights = SCORING_WEIGHTS_BY_MODE.get(str(operating_mode), SCORING_WEIGHTS)
     scored["momentum_score"] = calculate_momentum_score(scored)
     scored["risk_score"] = calculate_risk_score(scored)
     scored["fundamental_score"] = calculate_fundamental_score(scored)
     scored["trend_score"] = calculate_trend_score(scored)
-    scored["total_score"] = sum(SCORING_WEIGHTS[key] * scored[key] for key in SCORING_WEIGHTS).clip(0, 100)
+    scored["sentiment_score_component"] = calculate_sentiment_score(scored)
+    if str(operating_mode) == "full" and "sentiment_score" in scored:
+        available_sentiment = scored["sentiment_score_component"].notna()
+        no_sentiment_weights = {"trend_score": 0.30, "momentum_score": 0.3181818182, "fundamental_score": 0.2545454545, "risk_score": 0.1272727273}
+        full_sentiment_weights = {"trend_score": 0.30, "sentiment_score_component": 0.15, "momentum_score": 0.25, "fundamental_score": 0.20, "risk_score": 0.10}
+        with_sentiment = sum(full_sentiment_weights[key] * scored[key].fillna(0) for key in full_sentiment_weights)
+        without_sentiment = sum(no_sentiment_weights[key] * scored[key].fillna(0) for key in no_sentiment_weights)
+        scored["total_score"] = without_sentiment.where(~available_sentiment, with_sentiment).clip(0, 100)
+        scored["sentiment_score_component"] = scored["sentiment_score_component"].fillna(0.0)
+    else:
+        scored["sentiment_score_component"] = scored["sentiment_score_component"].fillna(0.0)
+        scored["total_score"] = sum(weights[key] * scored[key].fillna(0) for key in weights).clip(0, 100)
     scored["trend_signal"] = scored.apply(classify_trend_signal, axis=1)
     scored["synergy_label"] = scored.apply(assign_synergy_label, axis=1)
     scored["synergy_score"] = scored.apply(calculate_synergy_score, axis=1)
     scored["confidence_score"] = scored.apply(calculate_confidence_score, axis=1)
     scored["data_quality_status"] = scored.apply(assess_data_quality, axis=1)
     scored["actionability_status"] = scored.apply(assess_actionability, axis=1)
-    scored["recommendation"] = scored.apply(lambda row: assign_recommendation(row.total_score, row.confidence_score, row.synergy_label, row.actionability_status, row.trend_data_status), axis=1)
+    scored["recommendation"] = scored.apply(lambda row: assign_recommendation(row.total_score, row.confidence_score, row.synergy_label, row.actionability_status, row.trend_data_status, row.get("operating_mode")), axis=1)
     scored["short_explanation"] = scored.apply(generate_explanation, axis=1)
     return scored
 

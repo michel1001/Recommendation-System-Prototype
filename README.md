@@ -20,18 +20,20 @@ The current prototype includes:
 - A ten-sector ETF universe.
 - Google Trends loading with a live/cache/demo/fallback strategy.
 - Explicit Google Trends refresh modes: `auto`, `cache_only`, `force_live`, and `demo_only`.
+- Provider-based trend architecture with manual CSV, external API placeholder, pytrends, cache, and demo providers.
+- A supervised ML research layer that trains sector outperformance models using historical engineered features.
 - Reproducible demo Google Trends data when live access is unavailable.
 - Market and fundamental data loading through `yfinance`.
 - Technical indicators: momentum, volatility, downside volatility, drawdown, moving averages, distance to the 200-day moving average, and volume momentum.
 - Google Trends indicators: latest value, 4-week and 12-week momentum, 12-week and 52-week z-scores, spike detection, acceleration, volatility, and percentile.
 - Explainable trend, momentum, risk, fundamental, synergy, and confidence scores.
-- Recommendation labels: `Overweight Candidate`, `Watch`, `Neutral`, and `Avoid`.
+- Recommendation labels: `Research Candidate`, `Watch`, `Neutral`, `Avoid`, `Research Prototype`, and `Insufficient Data`.
 - HTML management report generation and a Streamlit dashboard.
 - Output verification and a pytest test suite.
 - Data-quality and actionability gates that prevent demo or missing data from producing investment-like recommendations.
 - A market-only monthly sector-rotation backtesting framework; Google Trends history is not yet part of the backtest.
 
-Current local validation status: `18 passed` with `python -m pytest`.
+Current validation command: run `python -m pytest` for the latest result.
 
 Dashboard command:
 
@@ -49,7 +51,12 @@ Recommendation-System-Prototype/
 |   |-- raw/
 |   |-- processed/
 |   |-- demo/
+|   |-- external/
+|   |   `-- google_trends_manual/
 |   `-- reports/
+|-- models/
+|   |-- sector_model.pkl
+|   `-- feature_columns.json
 |-- reports/
 |   |-- html/
 |   `-- figures/
@@ -57,6 +64,10 @@ Recommendation-System-Prototype/
 |   |-- config.py
 |   |-- data_loader.py
 |   |-- trends_loader.py
+|   |-- trend_providers.py
+|   |-- ml_dataset.py
+|   |-- ml_model.py
+|   |-- ml_evaluation.py
 |   |-- preprocessing.py
 |   |-- indicators.py
 |   |-- scoring.py
@@ -87,6 +98,13 @@ Current data sources are:
 
 Live Google Trends access can fail because of rate limits or API restrictions. In that case, the prototype uses clearly flagged synthetic demo data. Demo data is used only to validate and demonstrate the pipeline; it must not be interpreted as real investor attention.
 
+Current external-data status:
+
+- The stable default workflow is `market_fundamental`; it does not require Google Trends or Finnhub sentiment.
+- Google Trends live access through `pytrends` is unreliable and may return rate limits or blocking responses.
+- Finnhub news sentiment is optional. In current testing, the Finnhub key loaded correctly, but the news-sentiment endpoint returned HTTP 403 / `invalid_api_key`, which likely indicates an account, plan, endpoint, or key-permission issue.
+- The project handles these failures without crashing and labels unusable source data explicitly.
+
 ## Google Trends Rate Limits and Refresh Modes
 
 Google Trends may return HTTP 429 because `pytrends` uses unofficial web requests. To avoid unnecessary live calls, the prototype supports explicit refresh modes:
@@ -99,13 +117,13 @@ Google Trends may return HTTP 429 because `pytrends` uses unofficial web request
 Normal pipeline:
 
 ```bash
-python src/pipeline.py --trend-mode auto
+python src/pipeline.py --mode full --trend-mode auto
 ```
 
 Demo-safe pipeline:
 
 ```bash
-python src/pipeline.py --trend-mode demo_only
+python src/pipeline.py --mode demo
 ```
 
 Cache-only pipeline:
@@ -133,6 +151,216 @@ python -m streamlit run app/app.py
 ```
 
 Each run writes `trend_data_status`, `trend_refresh_mode`, and `trend_cache_age_hours` to the output CSV so analysts can see whether a sector used live, cached, demo, or fallback trend input.
+
+## Operating Modes
+
+### Market/Fundamental Mode
+
+Default mode. Uses ETF market data and available fundamental data only. Google Trends are not used in scoring. This is the most reliable mode when no real trend data is available.
+
+```bash
+python src/pipeline.py --mode market_fundamental
+```
+
+### Full Mode
+
+Uses Google Trends if real manual/cache/live/API data is available, plus market and fundamental data.
+
+```bash
+python src/pipeline.py --mode full
+```
+
+### Demo Mode
+
+Uses synthetic Google Trends data to demonstrate the full dashboard logic. Outputs are prototype-only and not actionable.
+
+```bash
+python src/pipeline.py --mode demo
+```
+
+## Real Google Trends Data Options
+
+The prototype no longer depends on only `pytrends`. It uses a provider-based architecture:
+
+- `manual_csv`: real Google Trends data exported manually from the Google Trends website.
+- `external_api`: placeholder for future providers such as SerpApi, DataForSEO, or an official Google Trends API.
+- `live_pytrends`: real Google Trends data requested through pytrends; this may fail with HTTP 429 rate limits.
+- `cache`: previously loaded real trend data from `data/raw/`.
+- `demo`: synthetic prototype data used only when real data is unavailable or intentionally selected.
+
+Manual CSV is preferred because it avoids pytrends rate limiting while still allowing real Google Trends data in a university prototype.
+
+## How to add real Google Trends data manually
+
+1. Go to Google Trends in the browser.
+2. Search the sector keywords, for example `artificial intelligence`, `semiconductors`, and `cloud computing` for Technology.
+3. Set the same region and timeframe used by the project, for example United States and `today 5-y`.
+4. Download the CSV from Google Trends.
+5. Save it with this pattern:
+
+```text
+data/external/google_trends_manual/google_trends_manual_Technology.csv
+```
+
+6. Run the pipeline:
+
+```bash
+python src/pipeline.py --mode full --trend-mode auto
+```
+
+Manual CSV data is real Google Trends data, unlike demo data. However, keyword choices, timeframe, geography, and export date must be documented consistently.
+
+## Optional News/Social Sentiment Module
+
+The prototype includes an optional news/social sentiment module for future sector-enrichment work. It can use Finnhub company-level news sentiment and aggregate representative company tickers into sector-level features.
+
+Important caveats:
+
+- Finnhub sentiment is an external vendor signal.
+- The exact Finnhub scoring methodology is not fully transparent.
+- Sentiment is treated as supporting alternative data, not as a standalone investment signal.
+- The module is optional and disabled by default.
+- It requires a `FINNHUB_API_KEY`.
+
+Representative company sentiment is aggregated into fields such as `sentiment_score_component`, `sentiment_bullish_percent`, `sentiment_bearish_percent`, `sentiment_buzz`, and `sentiment_article_count`.
+
+The project automatically loads environment variables from `config/.env` and `.env` if those files exist. A variable already set in PowerShell takes priority.
+
+`config/.env` example:
+
+```text
+FINNHUB_API_KEY=your_key_here
+```
+
+PowerShell setup alternative:
+
+```powershell
+$env:FINNHUB_API_KEY="your_key_here"
+python src/pipeline.py --mode full --use-sentiment
+```
+
+Without sentiment, use the stable default workflow:
+
+```bash
+python src/pipeline.py --mode market_fundamental
+```
+
+If `--use-sentiment` is requested without an API key, the pipeline does not crash. It marks sentiment as `disabled_no_api_key` and explains the missing key in the console, dashboard, and report.
+
+## External Source Debug Scripts
+
+The repository includes small standalone scripts to debug external data access without running the full scoring pipeline. These scripts are useful for team members who want to check whether the source itself works before debugging scoring, dashboard, or ML logic.
+
+Debug Google Trends / pytrends:
+
+```bash
+python scripts/debug_google_trends.py --sector Technology
+```
+
+Optional explicit keywords:
+
+```bash
+python scripts/debug_google_trends.py --sector Technology --keywords "artificial intelligence" semiconductors "cloud computing"
+```
+
+If this returns no rows or an error, the likely cause is Google/pytrends rate limiting or blocking. This is expected behavior for unofficial Google Trends access.
+
+Debug Finnhub news sentiment:
+
+```bash
+python scripts/debug_finnhub_sentiment.py --ticker AAPL
+```
+
+Debug one sector aggregation:
+
+```bash
+python scripts/debug_finnhub_sentiment.py --sector Technology
+```
+
+Clear cached Finnhub responses before testing:
+
+```bash
+python scripts/debug_finnhub_sentiment.py --ticker AAPL --clear-cache
+```
+
+The Finnhub debug script does not print the API key. It only prints whether a key is loaded, the key length, and a short hash fingerprint for comparing local setups safely.
+
+Typical Finnhub statuses:
+
+- `live`: Finnhub returned usable sentiment data.
+- `cache`: cached usable sentiment data was loaded.
+- `disabled_no_api_key`: no `FINNHUB_API_KEY` was loaded.
+- `invalid_api_key`: Finnhub returned HTTP 401/403 or an invalid-key style response.
+- `rate_limited`: Finnhub rate limit was reached.
+- `no_data`: Finnhub responded, but no usable sentiment fields were present.
+- `missing`: no valid company sentiment could be aggregated.
+
+## AI / ML Component
+
+The rule-based score remains the transparent baseline. It is not a trained AI prediction; it is a weighted, explainable scoring framework.
+
+The ML layer is the actual supervised AI research component. It trains models on historical sector-date features and predicts:
+
+- `ml_predicted_outperform_probability`: probability that a sector outperforms SPY over the next 4 weeks.
+- `ml_predicted_excess_return_4w`: expected 4-week sector return minus SPY return.
+
+Implemented model families:
+
+- Classification: Logistic Regression and Random Forest Classifier.
+- Regression: Ridge and Random Forest Regressor.
+
+The ML workflow uses a time-based train/test split, not a random split, to reduce time-series leakage.
+
+## ML Training Workflow
+
+Recommended market/fundamental ML workflow:
+
+```bash
+python src/pipeline.py --mode market_fundamental
+python src/ml_dataset.py --feature-set market_fundamental
+python src/ml_model.py
+python src/ml_evaluation.py
+python src/pipeline.py --mode market_fundamental --use-ml
+python src/verify_outputs.py
+python -m pytest
+python -m streamlit run app/app.py
+```
+
+Presentation-safe workflow:
+
+```bash
+python src/pipeline.py --mode demo
+python src/ml_dataset.py --feature-set full
+python src/ml_model.py
+python src/ml_evaluation.py
+python src/pipeline.py --mode demo --use-ml
+python -m streamlit run app/app.py
+```
+
+Outputs:
+
+- `data/processed/ml_training_dataset.csv`
+- `data/processed/ml_predictions.csv`
+- `data/processed/ml_evaluation_metrics.csv`
+- `data/processed/ml_backtest_results.csv`
+- `data/processed/ml_backtest_metrics.csv`
+- `data/processed/ml_feature_importance.csv`
+- `models/sector_model.pkl`
+- `models/feature_columns.json`
+- `models/model_metadata.json`
+
+## Difference Between Rule-Based Score and ML Prediction
+
+- Rule-based score: transparent weighted baseline combining trend, momentum, risk, and fundamental features.
+- ML prediction: supervised model output trained on historical features and forward 4-week SPY-relative outcomes.
+
+Both remain decision-support research signals. Neither is a buy/sell recommendation.
+
+## Limitations and Data Leakage Warning
+
+The ML model is only meaningful when trained on real historical data. If the dataset uses synthetic demo trend data, ML outputs are marked prototype-only and should not be interpreted as investment-grade evidence.
+
+The dataset builder avoids direct look-ahead bias by using current/past features and future returns only as targets. Current ETF fundamentals from yfinance are not treated as point-in-time historical fundamentals by default, because that could introduce look-ahead bias.
 
 ## Google Trends Data Status
 
@@ -197,7 +425,7 @@ Install dependencies and run the prototype:
 
 ```bash
 pip install -r requirements.txt
-python src/pipeline.py --trend-mode auto
+python src/pipeline.py --mode market_fundamental
 python src/verify_outputs.py
 python -m pytest
 python -m streamlit run app/app.py
