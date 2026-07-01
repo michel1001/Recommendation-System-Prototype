@@ -1,0 +1,9 @@
+table_name,row_count,status
+sectors,11,OK
+market_prices,15060,OK
+market_indicators,15060,OK
+fundamentals,11,OK
+google_trends,0,EMPTY
+trend_features,0,EMPTY
+recommendation_scores,21,OK
+pipeline_runs,2,OK

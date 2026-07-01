@@ -21,6 +21,8 @@ RAW_SENTIMENT_DIR = RAW_DATA_DIR / "sentiment"
 DEMO_DATA_DIR = DATA_DIR / "demo"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
 MANUAL_TRENDS_DIR = EXTERNAL_DATA_DIR / "google_trends_manual"
+DATABASE_DIR = DATA_DIR / "database"
+DATABASE_PATH = DATABASE_DIR / "sector_monitoring.db"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 MODELS_DIR = PROJECT_ROOT / "models"
@@ -42,7 +44,7 @@ SECTOR_ETFS = {
     "Technology": "XLK", "Healthcare": "XLV", "Financials": "XLF",
     "Energy": "XLE", "Consumer Discretionary": "XLY", "Industrials": "XLI",
     "Utilities": "XLU", "Materials": "XLB", "Real Estate": "XLRE",
-    "Consumer Staples": "XLP",
+    "Consumer Staples": "XLP", "Communication Services": "XLC",
 }
 
 TREND_KEYWORDS = {
@@ -56,6 +58,7 @@ TREND_KEYWORDS = {
     "Materials": ["commodity prices", "mining stocks", "raw materials"],
     "Real Estate": ["real estate market", "REIT", "mortgage rates"],
     "Consumer Staples": ["food prices", "consumer staples", "grocery prices"],
+    "Communication Services": ["communication services stocks", "streaming media", "digital advertising"],
 }
 
 SENTIMENT_ENABLED = False
@@ -73,6 +76,7 @@ SECTOR_REPRESENTATIVE_TICKERS = {
     "Materials": ["LIN", "SHW", "FCX", "NEM", "APD"],
     "Real Estate": ["PLD", "AMT", "EQIX", "SPG", "O"],
     "Consumer Staples": ["PG", "KO", "PEP", "WMT", "COST"],
+    "Communication Services": ["GOOGL", "META", "NFLX", "DIS", "TMUS"],
 }
 
 SCORING_WEIGHTS = {"trend_score": 0.40, "momentum_score": 0.25, "fundamental_score": 0.20, "risk_score": 0.15}
@@ -103,5 +107,5 @@ DISCLAIMER = "Decision support only. No autonomous trading. Not financial advice
 
 def ensure_directories() -> None:
     """Create output folders used by the pipeline."""
-    for directory in (RAW_DATA_DIR, RAW_SENTIMENT_DIR, DEMO_DATA_DIR, MANUAL_TRENDS_DIR, PROCESSED_DATA_DIR, MODELS_DIR, HTML_REPORT_PATH.parent):
+    for directory in (RAW_DATA_DIR, RAW_SENTIMENT_DIR, DEMO_DATA_DIR, MANUAL_TRENDS_DIR, DATABASE_DIR, PROCESSED_DATA_DIR, MODELS_DIR, HTML_REPORT_PATH.parent):
         directory.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,13 @@
+sector,ticker,row_count,min_date,max_date,missing_momentum_21_pct,missing_momentum_63_pct,missing_momentum_126_pct,missing_volatility_20_pct,missing_drawdown_current_pct,missing_relative_strength_vs_spy_63_pct,missing_relative_strength_vs_spy_126_pct,status
+Benchmark,SPY,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,100.0,100.0,OK
+Communication Services,XLC,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Consumer Discretionary,XLY,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Consumer Staples,XLP,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Energy,XLE,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Financials,XLF,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Healthcare,XLV,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Industrials,XLI,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Materials,XLB,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Real Estate,XLRE,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Technology,XLK,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK
+Utilities,XLU,1255,2021-07-01,2026-07-01,1.67,5.02,10.04,1.59,0.0,5.02,10.04,OK

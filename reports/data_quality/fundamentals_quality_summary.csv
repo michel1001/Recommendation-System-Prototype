@@ -1,0 +1,12 @@
+sector,ticker,trailing_pe_available,forward_pe_available,price_to_book_available,dividend_yield_available,beta_available,market_cap_available,missing_field_count,available_field_count,status
+Communication Services,XLC,True,False,False,True,False,False,4,2,PARTIAL
+Consumer Discretionary,XLY,True,False,True,True,False,False,3,3,OK
+Consumer Staples,XLP,True,False,True,True,False,False,3,3,OK
+Energy,XLE,True,False,True,True,False,False,3,3,OK
+Financials,XLF,True,False,True,True,False,False,3,3,OK
+Healthcare,XLV,True,False,True,True,False,False,3,3,OK
+Industrials,XLI,True,False,True,True,False,False,3,3,OK
+Materials,XLB,True,False,True,True,False,False,3,3,OK
+Real Estate,XLRE,True,False,False,True,False,False,4,2,PARTIAL
+Technology,XLK,True,False,True,True,False,False,3,3,OK
+Utilities,XLU,True,False,True,True,False,False,3,3,OK

@@ -13,6 +13,7 @@ MARKET_FIELDS = ["momentum_21", "momentum_63", "momentum_126", "volatility_20", 
 FUNDAMENTAL_FIELDS = ["trailingPE", "forwardPE", "priceToBook", "dividendYield", "beta", "marketCap"]
 LIVE_TREND_STATUSES = {"live", "live_pytrends", "manual_csv", "external_api"}
 CACHED_TREND_STATUSES = {"cache"}
+MISSING_TREND_STATUSES = {"fallback", "missing_from_db"}
 USABLE_SENTIMENT_STATUSES = {"live", "cache", "available", "demo"}
 
 
@@ -73,7 +74,7 @@ def calculate_trend_score(feature_df: pd.DataFrame) -> pd.Series:
     if "trend_volatility" in feature_df:
         scores["stability"] = minmax_score(feature_df["trend_volatility"], False)
     result = scores.mean(axis=1).fillna(50.0)
-    result.loc[statuses == "fallback"] = 50.0
+    result.loc[statuses.isin(MISSING_TREND_STATUSES)] = 50.0
     result.loc[statuses == "demo"] *= .95
     return result.clip(0, 100)
 
@@ -124,7 +125,7 @@ def assess_data_quality(row: pd.Series | dict[str, Any]) -> str:
         return "Market/fundamental research signal"
     if trend_status == "demo":
         return "Prototype only"
-    if trend_status == "fallback" or str(data.get("price_data_status", "missing")).lower() == "missing":
+    if trend_status in MISSING_TREND_STATUSES or str(data.get("price_data_status", "missing")).lower() == "missing":
         return "Insufficient data"
     if any(pd.isna(data.get(field)) for field in key_market_fields):
         return "Insufficient data"
@@ -156,7 +157,7 @@ def assign_recommendation(total_score: float, confidence_score: float = 0, syner
     """Return research labels only; never an instruction to trade."""
     if str(operating_mode).lower() == "demo":
         return "Research Prototype"
-    if str(trend_data_status).lower() == "fallback":
+    if str(trend_data_status).lower() in MISSING_TREND_STATUSES:
         return "Insufficient Data"
     if str(trend_data_status).lower() == "demo" or actionability_status == "Not actionable":
         return "Research Prototype"
@@ -176,7 +177,7 @@ def calculate_confidence_score(row: pd.Series | dict[str, Any]) -> float:
     status = str(data.get("trend_data_status", "fallback")).lower()
     if str(data.get("operating_mode", "full")).lower() == "market_fundamental":
         return float(np.clip(45 + min(filled, 50), 0, 100))
-    confidence += {"live": 6, "live_pytrends": 6, "manual_csv": 6, "external_api": 6, "cache": 4, "demo": -8, "fallback": -22}.get(status, -22)
+    confidence += {"live": 6, "live_pytrends": 6, "manual_csv": 6, "external_api": 6, "cache": 4, "demo": -8, "fallback": -22, "missing_from_db": -22}.get(status, -22)
     return float(np.clip(confidence, 0, 100))
 
 

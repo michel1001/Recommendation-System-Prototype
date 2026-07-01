@@ -164,6 +164,9 @@ def generate_html_report(ranking: pd.DataFrame, generated_at: datetime | None = 
     {''.join(quality_messages)}
   </ul>
 
+  <h2>Data Storage and Reproducibility</h2>
+  <p>Market data, fundamentals, imported Google Trends CSV data, indicators, and scoring outputs can be persisted in a local SQLite database. Pipeline runs can be reproduced from stored data, so <code>yfinance</code> does not need to be called on every run. Manual Google Trends CSV imports store source-file, geography, and timeframe metadata for analyst review.</p>
+
   <h2>Operating Mode and Scoring Profile</h2>
   <ul>
     <li><strong>Operating mode:</strong> {escape(operating_modes)}</li>

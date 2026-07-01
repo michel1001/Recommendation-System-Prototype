@@ -1,5 +1,5 @@
 {
-  "trained_at": "2026-06-28T14:24:33",
+  "trained_at": "2026-06-28T18:10:00",
   "feature_set": "market_fundamental",
   "target": {
     "classification": "target_outperform_spy_4w",

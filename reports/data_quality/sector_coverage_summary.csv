@@ -1,0 +1,12 @@
+expected_sector,expected_ticker,present_in_db,ticker_in_db,status
+Technology,XLK,True,XLK,OK
+Healthcare,XLV,True,XLV,OK
+Financials,XLF,True,XLF,OK
+Energy,XLE,True,XLE,OK
+Consumer Discretionary,XLY,True,XLY,OK
+Industrials,XLI,True,XLI,OK
+Utilities,XLU,True,XLU,OK
+Materials,XLB,True,XLB,OK
+Real Estate,XLRE,True,XLRE,OK
+Consumer Staples,XLP,True,XLP,OK
+Communication Services,XLC,True,XLC,OK

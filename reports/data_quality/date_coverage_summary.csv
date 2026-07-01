@@ -1,0 +1,13 @@
+sector,ticker,row_count,min_date,max_date,number_of_missing_close,number_of_missing_adj_close,number_of_missing_volume,duplicate_date_rows,status
+Benchmark,SPY,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Communication Services,XLC,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Consumer Discretionary,XLY,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Consumer Staples,XLP,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Energy,XLE,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Financials,XLF,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Healthcare,XLV,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Industrials,XLI,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Materials,XLB,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Real Estate,XLRE,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Technology,XLK,1255,2021-07-01,2026-07-01,0,0,0,0,OK
+Utilities,XLU,1255,2021-07-01,2026-07-01,0,0,0,0,OK

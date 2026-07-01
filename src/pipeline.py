@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import sys
 from pathlib import Path
+import uuid
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +16,22 @@ import numpy as np
 
 from src.config import ALLOWED_OPERATING_MODES, DEFAULT_MARKET_PERIOD, DISCLAIMER, OPERATING_MODE, RANKING_PATH, SCORING_MODE, SCORING_PROFILE_BY_MODE, SECTOR_REPRESENTATIVE_TICKERS, SENTIMENT_ENABLED, TREND_KEYWORDS, TREND_REFRESH_MODE, ensure_directories
 from src.data_loader import get_sector_etfs, load_fundamentals, load_market_data
+from src.database import get_database_path, table_exists
+from src.db_loader import (
+    load_google_trends,
+    load_latest_fundamentals,
+    load_latest_trend_features,
+    load_market_indicators,
+    load_market_prices,
+    save_fundamentals,
+    save_market_indicators,
+    save_market_prices,
+    save_pipeline_run,
+    save_recommendation_scores,
+    save_trend_features,
+    upsert_sectors,
+)
+from src.db_schema import create_database_schema
 from src.indicators import enrich_market_indicators
 from src.ml_model import load_model, predict_current_signals
 from src.preprocessing import clean_market_data
@@ -65,7 +83,42 @@ def _relative_strength_features(market: pd.DataFrame, benchmark: pd.DataFrame) -
     return result
 
 
-def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_REFRESH_MODE, use_ml: bool = False, operating_mode: str = OPERATING_MODE, use_sentiment: bool | None = None) -> pd.DataFrame:
+def _load_market_from_db(ticker: str) -> pd.DataFrame:
+    prices = load_market_prices(ticker)
+    indicators = load_market_indicators(ticker)
+    if prices.empty and indicators.empty:
+        return pd.DataFrame()
+    if indicators.empty:
+        return prices
+    return prices.join(indicators, how="outer").sort_index() if not prices.empty else indicators
+
+
+def _database_has_required_data(sector_etfs: dict[str, str]) -> bool:
+    if not get_database_path().exists():
+        return False
+    if not all(table_exists(table) for table in ("market_prices", "market_indicators", "fundamentals", "sectors")):
+        return False
+    return bool(sector_etfs and not _load_market_from_db(next(iter(sector_etfs.values()))).empty)
+
+
+def _trend_features_from_db(sector: str) -> tuple[dict, str, dict]:
+    features = load_latest_trend_features(sector)
+    if features:
+        features["trend_data_status"] = features.get("trend_data_status") or "manual_csv"
+        return features, str(features["trend_data_status"]), {"trend_refresh_mode": "db", "trend_cache_age_hours": pd.NA, "trend_provider": "sqlite", "trend_source_detail": "SQLite trend_features table"}
+    trends = load_google_trends(sector)
+    if not trends.empty:
+        features = calculate_trend_features(trends)
+        features["trend_data_status"] = "manual_csv"
+        save_trend_features(features, sector)
+        return features, "manual_csv", {"trend_refresh_mode": "db", "trend_cache_age_hours": pd.NA, "trend_provider": "sqlite", "trend_source_detail": "SQLite google_trends table"}
+    print("No Google Trends data found in DB. Import manual CSVs with src/import_trends_csv.py.")
+    features = _trend_not_used_features()
+    features["trend_data_status"] = "missing_from_db"
+    return features, "missing_from_db", {"trend_refresh_mode": "db", "trend_cache_age_hours": pd.NA, "trend_provider": "sqlite", "trend_source_detail": "No Google Trends data found in DB. Import manual CSVs with src/import_trends_csv.py."}
+
+
+def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_REFRESH_MODE, use_ml: bool = False, operating_mode: str = OPERATING_MODE, use_sentiment: bool | None = None, data_source: str = "db", save_to_db: bool = False) -> pd.DataFrame:
     """Build the ranking, HTML report, and dashboard input CSV without trading."""
     ensure_directories()
     rows, statuses = [], {}
@@ -79,30 +132,60 @@ def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_RE
     print(f"Scoring mode: {SCORING_MODE}")
     print(f"Operating mode: {operating_mode}")
     print(f"Trend refresh mode: {trend_mode}")
+    print(f"Data source: {data_source}")
     print(f"Sentiment module: {'enabled' if sentiment_enabled else 'disabled'}")
-    benchmark_market = enrich_market_indicators(clean_market_data(load_market_data("SPY", period)))
+    sector_etfs = get_sector_etfs()
+    if data_source == "db" and not _database_has_required_data(sector_etfs):
+        raise SystemExit("Database is empty. Run python src/refresh_market_data.py first.")
+    if save_to_db:
+        create_database_schema()
+        upsert_sectors(sector_etfs)
+    if data_source == "db":
+        benchmark_market = _load_market_from_db("SPY")
+    else:
+        benchmark_prices = clean_market_data(load_market_data("SPY", period))
+        benchmark_market = enrich_market_indicators(benchmark_prices)
+        if save_to_db and not benchmark_prices.empty:
+            save_market_prices(benchmark_prices, "Benchmark", "SPY")
+            save_market_indicators(benchmark_market, "Benchmark", "SPY")
     print("[OK] Benchmark data loaded: SPY" if not benchmark_market.empty else "[WARN] Benchmark data unavailable: SPY")
     sentiment_statuses: dict[str, list[str]] = {}
-    for sector, ticker in get_sector_etfs().items():
-        market = enrich_market_indicators(clean_market_data(load_market_data(ticker, period)))
+    for sector, ticker in sector_etfs.items():
+        if data_source == "db":
+            market = _load_market_from_db(ticker)
+            fundamentals = load_latest_fundamentals(ticker)
+        else:
+            market_prices = clean_market_data(load_market_data(ticker, period))
+            market = enrich_market_indicators(market_prices)
+            fundamentals = load_fundamentals(ticker)
+            if save_to_db and not market_prices.empty:
+                save_market_prices(market_prices, sector, ticker)
+                enriched_for_db = market.copy()
+                enriched_for_db.update(pd.DataFrame([_relative_strength_features(market, benchmark_market)], index=[market.index[-1]]) if not market.empty else pd.DataFrame())
+                save_market_indicators(market, sector, ticker)
+                save_fundamentals(fundamentals, sector, ticker)
         print(f"[OK] Market data loaded: {sector}" if not market.empty else f"[WARN] Market data unavailable: {sector}")
         if use_trends:
-            trends, status, trend_metadata = get_trends_with_cache_or_demo(
-                sector,
-                TREND_KEYWORDS[sector],
-                return_status=True,
-                return_metadata=True,
-                refresh_mode=trend_mode,
-            )
-            trend_features = calculate_trend_features(trends)
+            if data_source == "db":
+                trend_features, status, trend_metadata = _trend_features_from_db(sector)
+            else:
+                trends, status, trend_metadata = get_trends_with_cache_or_demo(
+                    sector,
+                    TREND_KEYWORDS[sector],
+                    return_status=True,
+                    return_metadata=True,
+                    refresh_mode=trend_mode,
+                )
+                trend_features = calculate_trend_features(trends)
         else:
             status = "not_used"
             trend_metadata = {"trend_refresh_mode": trend_mode, "trend_cache_age_hours": pd.NA, "trend_provider": "disabled_by_mode", "trend_source_detail": "Google Trends disabled in market/fundamental mode"}
             trend_features = _trend_not_used_features()
         statuses.setdefault(status, []).append(sector)
         print(f"[OK] Google Trends status {status}: {sector}")
-        row = collect_latest_features(sector, ticker, market, load_fundamentals(ticker), trend_features)
-        row.update(_relative_strength_features(market, benchmark_market))
+        row = collect_latest_features(sector, ticker, market, fundamentals, trend_features)
+        if "relative_strength_vs_spy_63" not in row or pd.isna(row.get("relative_strength_vs_spy_63")):
+            row.update(_relative_strength_features(market, benchmark_market))
         if sentiment_enabled:
             sentiment_features = aggregate_sector_sentiment(sector, SECTOR_REPRESENTATIVE_TICKERS.get(sector, []))
         else:
@@ -123,7 +206,7 @@ def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_RE
             "trend_source_detail": trend_metadata.get("trend_source_detail", ""),
             "trend_keywords": ", ".join(TREND_KEYWORDS[sector]),
             "market_last_date": market_last_date,
-            "price_data_status": "live" if not market.empty else "missing",
+            "price_data_status": data_source if not market.empty else "missing",
             "scoring_mode": SCORING_MODE,
             "operating_mode": operating_mode,
             "scoring_profile": SCORING_PROFILE_BY_MODE[operating_mode],
@@ -134,6 +217,12 @@ def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_RE
     ranking.to_csv(RANKING_PATH, index=False)
     save_report_csv(ranking)
     html_path = generate_html_report(ranking)
+    if data_source == "db" or save_to_db:
+        create_database_schema()
+        run_timestamp = datetime.now(timezone.utc).isoformat()
+        run_id = f"run-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
+        save_recommendation_scores(ranking, run_id, run_timestamp)
+        save_pipeline_run(run_id, {"run_timestamp": run_timestamp, "operating_mode": operating_mode, "trend_mode": trend_mode, "use_ml": use_ml, "use_sentiment": sentiment_enabled, "status": "completed", "notes": f"data_source={data_source}"})
     print("[OK] Scores calculated")
     print(f"[OK] CSV exported: {RANKING_PATH.relative_to(PROJECT_ROOT)}")
     print(f"[OK] HTML report exported: {html_path.relative_to(PROJECT_ROOT)}")
@@ -157,6 +246,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-ml", action="store_true", help="Disable ML predictions and mark outputs as not_trained.")
     parser.add_argument("--use-sentiment", action="store_true", help="Enable optional Finnhub news/social sentiment in full mode.")
     parser.add_argument("--no-sentiment", action="store_true", help="Disable optional news/social sentiment.")
+    parser.add_argument("--data-source", choices=["db", "live"], default="db", help="Read input data from SQLite or live yfinance/providers.")
+    parser.add_argument("--save-to-db", action="store_true", help="When using --data-source live, also save loaded market/fundamental data and scores to SQLite.")
     return parser.parse_args()
 
 
@@ -164,4 +255,4 @@ if __name__ == "__main__":
     args = parse_args()
     selected_trend_mode = "cache_only" if args.skip_live_trends else args.trend_mode
     selected_sentiment = True if args.use_sentiment else False if args.no_sentiment else None
-    run_pipeline(period=args.period, trend_mode=selected_trend_mode, use_ml=args.use_ml and not args.no_ml, operating_mode=args.mode, use_sentiment=selected_sentiment)
+    run_pipeline(period=args.period, trend_mode=selected_trend_mode, use_ml=args.use_ml and not args.no_ml, operating_mode=args.mode, use_sentiment=selected_sentiment, data_source=args.data_source, save_to_db=args.save_to_db)

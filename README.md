@@ -1,3 +1,11 @@
+Next Steps:
+-> aus dem Dashboard nur die Management Sachen anzeigen, nochmal Dashboarding Papers anschauen.
+-> Daten in Datenbank überführen, Trends Daten auch in die Datenbank
+-> 10 Jahre Daten
+-> für jeden Sektor einen Wert bestimmen für die Trends
+-> Im Dashboard für jeden Sektor noch 3 Aktien die in letzter Zeit gestiegen sind.
+
+
 # Recommendation-System-Prototype
 
 AI-powered sector monitoring prototype using Google Trends, market data, fundamentals, and explainable scoring.
@@ -17,7 +25,7 @@ The use case assumes a fictional bank or asset manager that wants to support its
 The current prototype includes:
 
 - Automated end-to-end pipeline in `src/pipeline.py`.
-- A ten-sector ETF universe.
+- An eleven-sector ETF universe aligned with the standard GICS sectors.
 - Google Trends loading with a live/cache/demo/fallback strategy.
 - Explicit Google Trends refresh modes: `auto`, `cache_only`, `force_live`, and `demo_only`.
 - Provider-based trend architecture with manual CSV, external API placeholder, pytrends, cache, and demo providers.
@@ -40,6 +48,8 @@ Dashboard command:
 ```bash
 python -m streamlit run app/app.py
 ```
+
+The dashboard now opens in a management-oriented default view with overview, sector details, data quality, and validation tabs. Technical diagnostics such as database row counts, detailed ranking fields, ML metrics, and feature importance can be enabled with the sidebar toggle `Show technical diagnostics`.
 
 ## Repository Structure
 
@@ -189,6 +199,64 @@ The prototype no longer depends on only `pytrends`. It uses a provider-based arc
 - `demo`: synthetic prototype data used only when real data is unavailable or intentionally selected.
 
 Manual CSV is preferred because it avoids pytrends rate limiting while still allowing real Google Trends data in a university prototype.
+
+## Local SQLite Database
+
+The prototype can store historical market data, fundamentals, imported Google Trends data, indicators, and scoring outputs in a local SQLite database.
+
+Database path:
+
+```text
+data/database/sector_monitoring.db
+```
+
+Create or refresh the market database:
+
+```bash
+python src/refresh_market_data.py --period 5y
+```
+
+Import manual Google Trends CSV data:
+
+```bash
+python src/import_trends_csv.py --file data/external/google_trends_manual/google_trends_manual_Technology.csv --sector Technology --geo US --timeframe "today 5-y"
+```
+
+Run the pipeline from SQLite:
+
+```bash
+python src/pipeline.py --mode market_fundamental --data-source db
+```
+
+Run the pipeline live and save inputs/results to SQLite:
+
+```bash
+python src/pipeline.py --mode market_fundamental --data-source live --save-to-db
+```
+
+Verify the database:
+
+```bash
+python src/verify_database.py
+```
+
+## Data Quality Report
+
+The project includes a database-level data quality report for CRISP-DM Data Understanding and Data Preparation. It reads only from the local SQLite database and creates Markdown plus CSV summaries.
+
+```bash
+python src/data_quality_report.py
+```
+
+Outputs:
+
+- `reports/data_quality/data_quality_summary.md`
+- `reports/data_quality/table_row_counts.csv`
+- `reports/data_quality/missing_values_summary.csv`
+- `reports/data_quality/sector_coverage_summary.csv`
+- `reports/data_quality/date_coverage_summary.csv`
+- `reports/data_quality/fundamentals_quality_summary.csv`
+- `reports/data_quality/google_trends_quality_summary.csv`
 
 ## How to add real Google Trends data manually
 

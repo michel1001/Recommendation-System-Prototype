@@ -13,6 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.config import FINNHUB_API_KEY_ENV, MODEL_PATH, TREND_CACHE_MAX_AGE_HOURS
+from src.database import get_connection, get_database_path, table_exists
 
 CSV_PATH = PROJECT_ROOT / "data" / "processed" / "recommendation_scores.csv"
 HTML_REPORT_PATH = PROJECT_ROOT / "reports" / "html" / "sector_monitoring_report.html"
@@ -85,6 +86,8 @@ def verify_outputs() -> bool:
     operating_modes: list[str] = []
     sentiment_missing_columns: list[str] = []
     sentiment_statuses: list[str] = []
+    database_fail = False
+    database_warnings: list[str] = []
     if CSV_PATH.exists():
         ranking = pd.read_csv(CSV_PATH)
         for column in REQUIRED_COLUMNS:
@@ -97,7 +100,7 @@ def verify_outputs() -> bool:
             market_feature_fail = market_values.isna().all().any()
             trend_statuses = ranking["trend_data_status"].fillna("fallback").astype(str).str.lower()
             operating_modes = sorted(ranking.get("operating_mode", pd.Series("unknown", index=ranking.index)).fillna("unknown").astype(str).str.lower().unique())
-            valid_trend_statuses = {"live", "live_pytrends", "manual_csv", "external_api", "cache", "demo", "not_used"}
+            valid_trend_statuses = {"live", "live_pytrends", "manual_csv", "external_api", "cache", "demo", "not_used", "missing_from_db"}
             trend_status_fail = not trend_statuses.isin(valid_trend_statuses).any() or trend_statuses.eq("fallback").all()
             score_fail = pd.to_numeric(ranking["total_score"], errors="coerce").isna().all()
             all_research_prototype = ranking["recommendation"].fillna("").astype(str).eq("Research Prototype").all()
@@ -115,8 +118,24 @@ def verify_outputs() -> bool:
                 cache_ages = pd.to_numeric(ranking["trend_cache_age_hours"], errors="coerce")
                 stale_cache_mask = trend_statuses.eq("cache") & cache_ages.gt(TREND_CACHE_MAX_AGE_HOURS)
                 stale_cache_sectors = ranking.loc[stale_cache_mask, "sector"].astype(str).tolist()
+            if ranking.get("price_data_status", pd.Series("", index=ranking.index)).fillna("").astype(str).str.lower().eq("db").any():
+                db_path = get_database_path()
+                if not db_path.exists():
+                    database_fail = True
+                    database_warnings.append(f"Database file not found: {db_path}")
+                else:
+                    required_tables = ("market_prices", "market_indicators", "fundamentals", "sectors")
+                    for table in required_tables:
+                        if not table_exists(table):
+                            database_fail = True
+                            database_warnings.append(f"Missing database table: {table}")
+                    if table_exists("google_trends"):
+                        with get_connection() as connection:
+                            trend_count = int(connection.execute("SELECT COUNT(*) FROM google_trends").fetchone()[0])
+                        if trend_count == 0:
+                            database_warnings.append("google_trends table is empty. This is OK for market_fundamental mode.")
 
-    if missing_files or missing_columns or sentiment_missing_columns or market_feature_fail or trend_status_fail or score_fail or ("market_fundamental" in operating_modes and all_research_prototype):
+    if missing_files or missing_columns or sentiment_missing_columns or market_feature_fail or trend_status_fail or score_fail or database_fail or ("market_fundamental" in operating_modes and all_research_prototype):
         if missing_files:
             print("[ERROR] Missing files:")
             for item in missing_files:
@@ -135,6 +154,10 @@ def verify_outputs() -> bool:
             print("[FAIL] All sectors use neutral trend fallback. Google Trends component is not demonstrable.")
         if score_fail:
             print("[FAIL] All total scores are empty.")
+        if database_fail:
+            print("[FAIL] Database checks failed.")
+            for warning in database_warnings:
+                print(f" - {warning}")
         if "market_fundamental" in operating_modes and all_research_prototype:
             print("[FAIL] Market/fundamental mode should not cap all rows to Research Prototype.")
         return False
@@ -145,6 +168,8 @@ def verify_outputs() -> bool:
         print("[WARN] Running in demo-only trend mode. Outputs are prototype-only.")
     if stale_cache_sectors:
         print(f"[WARN] Cached trend data is older than {TREND_CACHE_MAX_AGE_HOURS} hours for: {', '.join(stale_cache_sectors)}")
+    for warning in database_warnings:
+        print(f"[WARN] {warning}")
     if not MODEL_PATH.exists() or ml_statuses == ["not_trained"]:
         print("[WARN] ML model is not trained or not used. Run python src/ml_dataset.py and python src/ml_model.py, then rerun pipeline with --use-ml.")
     else:

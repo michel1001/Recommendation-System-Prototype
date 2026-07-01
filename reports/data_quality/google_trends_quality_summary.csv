@@ -1,0 +1,12 @@
+sector,has_raw_trends,raw_trend_rows,number_of_keywords,min_trend_date,max_trend_date,has_trend_features,trend_feature_rows,latest_trend_feature_date,status
+Technology,False,0,0,,,False,0,,NOT_USED
+Healthcare,False,0,0,,,False,0,,NOT_USED
+Financials,False,0,0,,,False,0,,NOT_USED
+Energy,False,0,0,,,False,0,,NOT_USED
+Consumer Discretionary,False,0,0,,,False,0,,NOT_USED
+Industrials,False,0,0,,,False,0,,NOT_USED
+Utilities,False,0,0,,,False,0,,NOT_USED
+Materials,False,0,0,,,False,0,,NOT_USED
+Real Estate,False,0,0,,,False,0,,NOT_USED
+Consumer Staples,False,0,0,,,False,0,,NOT_USED
+Communication Services,False,0,0,,,False,0,,NOT_USED

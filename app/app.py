@@ -1,205 +1,249 @@
-"""Streamlit dashboard for the educational sector-monitoring prototype."""
+"""Management-oriented Streamlit dashboard for sector monitoring."""
+
+from __future__ import annotations
 
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-from src.config import ML_EVALUATION_METRICS_PATH, ML_FEATURE_IMPORTANCE_PATH, TREND_CACHE_MAX_AGE_HOURS
+from src.config import ML_EVALUATION_METRICS_PATH, ML_FEATURE_IMPORTANCE_PATH
+from src.dashboard_helpers import (
+    SECTOR_REPRESENTATIVE_STOCKS,
+    component_rows,
+    data_quality_label,
+    ensure_dashboard_columns,
+    management_ranking_table,
+    ml_summary_table,
+    representative_stock_fallback,
+    risk_level,
+    sector_caveats,
+    signal_label,
+)
+from src.database import get_connection, table_exists
+
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "recommendation_scores.csv"
+BACKTEST_RESULTS_PATH = DATA_PATH.parent / "backtest_results.csv"
+BACKTEST_METRICS_PATH = DATA_PATH.parent / "backtest_metrics.csv"
 
-st.set_page_config(page_title="AI Sector Monitoring Dashboard", layout="wide")
-st.title("AI Sector Monitoring Dashboard")
-st.caption("Decision support only. No autonomous trading. Not financial advice.")
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def load_representative_stock_performance(sector: str, period: str = "6mo") -> pd.DataFrame:
+    """Return top recent representative stock performers for analyst review."""
+    tickers = SECTOR_REPRESENTATIVE_STOCKS.get(sector, [])
+    if not tickers:
+        return representative_stock_fallback(sector)
+    try:
+        import yfinance as yf
+
+        rows = []
+        for ticker in tickers:
+            data = yf.download(ticker, period=period, progress=False, auto_adjust=False)
+            if data is not None and isinstance(data.columns, pd.MultiIndex):
+                data.columns = [str(column[0]) for column in data.columns]
+            if data is None or data.empty or "Close" not in data:
+                continue
+            close = pd.to_numeric(data["Close"], errors="coerce").dropna()
+            if close.empty:
+                continue
+            recent_return = close.iloc[-1] / close.iloc[0] - 1 if len(close) > 1 and close.iloc[0] else pd.NA
+            rows.append(
+                {
+                    "Stock": ticker,
+                    "6M Return": recent_return,
+                    "Last Price": close.iloc[-1],
+                    "Analyst Review Note": "Positive momentum, review valuation" if pd.notna(recent_return) and recent_return > 0 else "Review sector context",
+                }
+            )
+        if not rows:
+            return representative_stock_fallback(sector)
+        result = pd.DataFrame(rows).sort_values("6M Return", ascending=False).head(3)
+        result["6M Return"] = result["6M Return"].map(lambda value: f"{value:.1%}" if pd.notna(value) else "n/a")
+        result["Last Price"] = result["Last Price"].map(lambda value: f"{value:.2f}" if pd.notna(value) else "n/a")
+        return result.reset_index(drop=True)
+    except Exception:
+        return representative_stock_fallback(sector)
+
+
+def database_management_status() -> dict:
+    """Load minimal non-technical database status for management display."""
+    status = {
+        "sector_count": None,
+        "has_spy": False,
+        "latest_market_date": "",
+        "market_rows": 0,
+        "indicator_rows": 0,
+        "fundamentals_rows": 0,
+        "google_trends_rows": 0,
+    }
+    try:
+        with get_connection() as connection:
+            if table_exists("sectors"):
+                status["sector_count"] = int(connection.execute("SELECT COUNT(*) FROM sectors").fetchone()[0])
+            if table_exists("market_prices"):
+                status["market_rows"] = int(connection.execute("SELECT COUNT(*) FROM market_prices").fetchone()[0])
+                status["latest_market_date"] = connection.execute("SELECT MAX(date) FROM market_prices").fetchone()[0] or ""
+                status["has_spy"] = bool(connection.execute("SELECT 1 FROM market_prices WHERE ticker = 'SPY' LIMIT 1").fetchone())
+            if table_exists("market_indicators"):
+                status["indicator_rows"] = int(connection.execute("SELECT COUNT(*) FROM market_indicators").fetchone()[0])
+            if table_exists("fundamentals"):
+                status["fundamentals_rows"] = int(connection.execute("SELECT COUNT(*) FROM fundamentals").fetchone()[0])
+            if table_exists("google_trends"):
+                status["google_trends_rows"] = int(connection.execute("SELECT COUNT(*) FROM google_trends").fetchone()[0])
+    except Exception:
+        pass
+    return status
+
+
+def score_bar_data(ranking: pd.DataFrame) -> pd.DataFrame:
+    return (
+        ranking[["sector", "total_score"]]
+        .sort_values("total_score", ascending=False)
+        .rename(columns={"sector": "Sector", "total_score": "Total Score"})
+        .set_index("Sector")
+    )
+
+
+def technical_diagnostics(ranking: pd.DataFrame, db_status: dict) -> None:
+    """Optional diagnostics for development use."""
+    st.subheader("Technical diagnostics")
+    st.caption("Hidden by default for management users.")
+    st.write("Database row counts")
+    st.dataframe(
+        pd.DataFrame(
+            [
+                {"Table": "market_prices", "Rows": db_status["market_rows"]},
+                {"Table": "market_indicators", "Rows": db_status["indicator_rows"]},
+                {"Table": "fundamentals", "Rows": db_status["fundamentals_rows"]},
+                {"Table": "google_trends", "Rows": db_status["google_trends_rows"]},
+            ]
+        ),
+        width="stretch",
+        hide_index=True,
+    )
+    st.write("Detailed ranking fields")
+    st.dataframe(ranking, width="stretch", hide_index=True)
+    if ML_EVALUATION_METRICS_PATH.exists():
+        st.write("ML evaluation metrics")
+        st.dataframe(pd.read_csv(ML_EVALUATION_METRICS_PATH), width="stretch", hide_index=True)
+    if ML_FEATURE_IMPORTANCE_PATH.exists():
+        importance = pd.read_csv(ML_FEATURE_IMPORTANCE_PATH)
+        if not importance.empty:
+            st.write("Feature importance")
+            st.bar_chart(importance.head(12).set_index("feature")["importance"])
+
+
+st.set_page_config(page_title="Sector Monitoring Management Dashboard", layout="wide")
+
+st.title("Sector Monitoring Management Dashboard")
+st.caption("Research-oriented overview of sector attractiveness, risk and data quality")
+
+show_technical = st.sidebar.toggle("Show technical diagnostics", value=False)
 
 if not DATA_PATH.exists():
-    st.warning("No ranking data found. Run `python src/pipeline.py --mode market_fundamental` first, or use `python src/pipeline.py --mode demo` for a presentation-safe run.")
+    st.warning("No ranking data found. Run `python src/pipeline.py --mode market_fundamental --data-source db` first.")
     st.stop()
 
-ranking = pd.read_csv(DATA_PATH).sort_values("total_score", ascending=False).reset_index(drop=True)
-ranking["trend_data_status"] = ranking["trend_data_status"].fillna("fallback").str.lower()
-if "trend_refresh_mode" not in ranking:
-    ranking["trend_refresh_mode"] = "unknown"
-if "trend_cache_age_hours" not in ranking:
-    ranking["trend_cache_age_hours"] = pd.NA
-if "trend_provider" not in ranking:
-    ranking["trend_provider"] = ranking["trend_data_status"]
-if "trend_source_detail" not in ranking:
-    ranking["trend_source_detail"] = ""
-if "operating_mode" not in ranking:
-    ranking["operating_mode"] = "market_fundamental"
-if "scoring_profile" not in ranking:
-    ranking["scoring_profile"] = "market_fundamental_only"
-for column, default in {
-    "ml_predicted_outperform_probability": pd.NA,
-    "ml_predicted_excess_return_4w": pd.NA,
-    "ml_model_status": "not_trained",
-    "ml_model_confidence": 0.0,
-    "ml_feature_set": "",
-    "sentiment_score_component": 0.0,
-    "sentiment_data_status": "not_used",
-    "sentiment_provider": "disabled_by_mode",
-    "sentiment_article_count": 0,
-    "sentiment_bullish_percent": pd.NA,
-    "sentiment_bearish_percent": pd.NA,
-    "sentiment_buzz": pd.NA,
-    "sentiment_coverage_count": 0,
-}.items():
-    if column not in ranking:
-        ranking[column] = default
-ranking["trend_cache_age_hours"] = pd.to_numeric(ranking["trend_cache_age_hours"], errors="coerce")
-ranking["synergy_label"] = ranking["synergy_label"].fillna("Balanced setup")
-status_counts = ranking["trend_data_status"].value_counts()
-demo_count, fallback_count = status_counts.get("demo", 0), status_counts.get("fallback", 0)
-refresh_modes = ", ".join(sorted(ranking["trend_refresh_mode"].dropna().astype(str).unique()))
-operating_modes = ", ".join(sorted(ranking["operating_mode"].dropna().astype(str).unique()))
-operating_mode_values = set(ranking["operating_mode"].dropna().astype(str).str.lower())
-if operating_mode_values == {"market_fundamental"}:
-    methodology_text = "The ranking combines market momentum, risk, relative strength versus SPY, available fundamentals, and ML-based research signals. Google Trends are not used in this run; scores are relative, explainable research signals, and no trading or orders are executed."
-elif operating_mode_values == {"full"}:
-    methodology_text = "The ranking combines Google Trends attention with market momentum, risk, fundamentals, and ML-based research signals. Scores are relative, explainable research signals; no trading or orders are executed."
-elif operating_mode_values == {"demo"}:
-    methodology_text = "The ranking demonstrates the full trend-market-fundamental pipeline using synthetic demo Google Trends data. Demo trend values are not real search interest; no trading or orders are executed."
-else:
-    methodology_text = "The ranking combines the configured sector ETF research signals for the selected operating mode. Scores are relative, explainable research signals; no trading or orders are executed."
-st.caption(f"Trend refresh mode: {refresh_modes or 'unknown'}")
-st.caption(f"Operating mode: {operating_modes or 'unknown'}")
+ranking = ensure_dashboard_columns(pd.read_csv(DATA_PATH)).sort_values("total_score", ascending=False).reset_index(drop=True)
+db_status = database_management_status()
 
-if fallback_count or (ranking.get("price_data_status", pd.Series("live", index=ranking.index)).eq("missing").sum() > len(ranking) / 2):
-    current_mode = "Insufficient Data Mode"
-elif demo_count:
-    current_mode = "Prototype Mode"
-else:
-    current_mode = "Research Mode"
-st.warning(f"Current mode: **{current_mode}**. Current outputs are research signals, not purchasing recommendations.")
-if ranking["operating_mode"].astype(str).str.lower().eq("market_fundamental").all():
-    st.info("Current mode: **Market/Fundamental Only**. Google Trends are not used in this run. This is the reliable baseline mode when real trend data is unavailable.")
+overview_tab, detail_tab, quality_tab, validation_tab = st.tabs(["Overview", "Sector Details", "Data Quality", "Validation"])
 
-if ranking["trend_refresh_mode"].astype(str).str.lower().eq("demo_only").all() or demo_count == len(ranking):
-    st.warning("Demo-only trend data is displayed. Google Trends values are synthetic prototype data and must not be interpreted as real search interest.")
-if demo_count:
-    st.info(f"Data quality notice: {demo_count} sector(s) use synthetic demo Google Trends data for prototype validation. It must not be interpreted as real search interest.")
-if fallback_count:
-    st.warning(f"Data quality warning: {fallback_count} sector(s) use neutral fallback trend data; their attention signals have limited evidential value.")
-stale_cache = ranking["trend_data_status"].eq("cache") & ranking["trend_cache_age_hours"].gt(TREND_CACHE_MAX_AGE_HOURS)
-if stale_cache.any():
-    st.warning(f"Cache freshness warning: {int(stale_cache.sum())} cached sector(s) are older than {TREND_CACHE_MAX_AGE_HOURS} hours and should be refreshed.")
+with overview_tab:
+    best_sector = ranking.iloc[0]
+    st.subheader("Executive Summary")
+    kpis = st.columns(3)
+    kpis[0].metric("Top ranked sector", f"{best_sector['sector']} ({best_sector['ticker']})")
+    kpis[1].metric("Sectors under review", len(ranking))
+    kpis[2].metric("Average sector score", f"{ranking['total_score'].mean():.1f}")
 
-best_sector = ranking.iloc[0]
-metrics = st.columns(4)
-metrics[0].metric("Top Sector", f"{best_sector['sector']} ({best_sector['ticker']})")
-metrics[1].metric("Average Trend Score", f"{ranking['trend_score'].mean():.1f}")
-metrics[2].metric("Strong Attention Spikes", int((ranking["trend_signal"] == "Strong Attention Spike").sum()))
-metrics[3].metric("Hype Risks", int((ranking["synergy_label"] == "Hype risk").sum()))
+    st.subheader("Sector Ranking Overview")
+    management_table = management_ranking_table(ranking)
+    st.dataframe(management_table, width="stretch", hide_index=True)
 
-st.subheader("Top-sector interpretation")
-component_scores = {"Google Trends": best_sector["trend_score"], "momentum": best_sector["momentum_score"], "fundamentals": best_sector["fundamental_score"], "risk": best_sector["risk_score"]}
-strongest_component, strongest_score = max(component_scores.items(), key=lambda item: item[1])
-if best_sector["trend_data_status"] == "demo":
-    limitation = "Its Google Trends input is synthetic demo data, so the attention signal is illustrative rather than observed."
-elif best_sector["trend_data_status"] == "fallback":
-    limitation = "Its Google Trends input is a neutral fallback, which is the weakest available data-quality state."
-else:
-    limitation = f"Its Google Trends input is marked {best_sector['trend_data_status']}, so source recency and coverage should still be reviewed."
-st.info(f"{best_sector['sector']} ranks first because its combined relative score is {best_sector['total_score']:.1f}; {strongest_component} is its strongest component ({strongest_score:.1f}). {best_sector['short_explanation']} {limitation} Human analyst review is required before any decision-support use.")
+    st.subheader("Sector score overview")
+    st.bar_chart(score_bar_data(ranking))
 
-st.subheader("Google Trends data status")
-status_metrics = st.columns(6)
-for column, status in zip(status_metrics, ("manual_csv", "live_pytrends", "cache", "demo", "fallback")):
-    column.metric(f"{status.title()} Trend Sectors", int(status_counts.get(status, 0)))
-fresh_cache_count = int((ranking["trend_data_status"].eq("cache") & ranking["trend_cache_age_hours"].le(TREND_CACHE_MAX_AGE_HOURS)).sum())
-status_metrics[5].metric("Fresh Cache Sectors", fresh_cache_count)
+with detail_tab:
+    st.subheader("Sector Details")
+    selected_sector = st.selectbox("Select sector", ranking["sector"].tolist())
+    selected = ranking.loc[ranking["sector"].eq(selected_sector)].iloc[0]
 
-st.subheader("Ranking")
-display_columns = ["sector", "ticker", "operating_mode", "scoring_profile", "total_score", "trend_score", "sentiment_score_component", "momentum_score", "risk_score", "fundamental_score", "confidence_score", "recommendation", "data_quality_status", "actionability_status", "trend_data_status", "trend_provider", "trend_refresh_mode", "trend_cache_age_hours", "sentiment_data_status", "sentiment_provider", "ml_model_status", "ml_feature_set", "ml_predicted_outperform_probability", "ml_predicted_excess_return_4w"]
-st.dataframe(ranking[display_columns], width="stretch", hide_index=True)
+    conclusion_cols = st.columns(3)
+    conclusion_cols[0].metric("Research signal", signal_label(selected["recommendation"]))
+    conclusion_cols[1].metric("Total score", f"{selected['total_score']:.1f}")
+    conclusion_cols[2].metric("Risk level", risk_level(selected["risk_score"]))
+    st.info(selected.get("short_explanation") or "Current sector signal should be reviewed by analysts in context.")
 
-st.markdown("---")
-st.header("AI Model")
-ml_statuses = ", ".join(sorted(ranking["ml_model_status"].fillna("not_trained").astype(str).unique()))
-ml_feature_sets = ", ".join(sorted(ranking.get("ml_feature_set", pd.Series("", index=ranking.index)).fillna("").astype(str).unique()))
-st.write(f"ML model status: **{ml_statuses}**")
-st.write(f"ML feature set: **{ml_feature_sets or 'not available'}**")
-st.caption("The ML model predicts historical sector outperformance probabilities and expected 4-week excess returns. It does not guarantee future performance.")
-if "demo" in ranking["trend_data_status"].astype(str).str.lower().unique():
-    st.warning("Some or all trend inputs are synthetic demo data. ML research signals are prototype-only and need analyst review.")
-ml_columns = ["sector", "ticker", "ml_predicted_outperform_probability", "ml_predicted_excess_return_4w", "ml_model_confidence", "ml_model_status", "data_quality_status", "actionability_status"]
-st.dataframe(ranking[ml_columns], width="stretch", hide_index=True)
-if ML_EVALUATION_METRICS_PATH.exists():
-    st.subheader("Model evaluation metrics")
-    st.dataframe(pd.read_csv(ML_EVALUATION_METRICS_PATH), width="stretch", hide_index=True)
-else:
-    st.info("ML evaluation metrics are not available yet. Run `python src/ml_dataset.py`, `python src/ml_model.py`, and `python src/ml_evaluation.py`.")
-if ML_FEATURE_IMPORTANCE_PATH.exists():
-    importance = pd.read_csv(ML_FEATURE_IMPORTANCE_PATH)
-    if not importance.empty:
-        st.subheader("Feature importance")
-        st.bar_chart(importance.head(12).set_index("feature")["importance"])
+    st.subheader("What drives the signal?")
+    components = component_rows(selected)
+    st.bar_chart(components.set_index("Component")["Score"])
 
-st.markdown("---")
-st.header("News & Social Sentiment")
-st.warning("Finnhub sentiment is provided by an external vendor. The exact scoring methodology is not fully transparent and should be treated as a supporting signal.")
-sentiment_statuses = ranking["sentiment_data_status"].fillna("not_used").astype(str).str.lower()
-if sentiment_statuses.eq("not_used").all() or sentiment_statuses.eq("disabled_no_api_key").all():
-    st.info("Sentiment module disabled. Add `FINNHUB_API_KEY=your_key_here` to `config/.env` or set it in PowerShell, then run `python src/pipeline.py --mode full --use-sentiment`.")
-else:
-    sentiment_columns = ["sector", "sentiment_data_status", "sentiment_provider", "sentiment_score_component", "sentiment_bullish_percent", "sentiment_bearish_percent", "sentiment_article_count", "sentiment_buzz", "sentiment_coverage_count"]
-    st.dataframe(ranking[sentiment_columns], width="stretch", hide_index=True)
-    st.bar_chart(ranking.set_index("sector")["sentiment_score_component"])
+    st.subheader("Key risks / caveats")
+    for caveat in sector_caveats(selected):
+        st.write(f"- {caveat}")
 
-st.subheader("Score distribution")
-charts = st.columns(3)
-charts[0].bar_chart(ranking.set_index("sector")["total_score"])
-charts[1].bar_chart(ranking.set_index("sector")["trend_score"])
-charts[2].bar_chart(ranking.set_index("sector")["synergy_score"])
+    st.subheader("Representative stocks to review")
+    st.caption("For analyst review only. These are not recommendations or buy/sell signals.")
+    st.dataframe(load_representative_stock_performance(selected_sector), width="stretch", hide_index=True)
 
-sector = st.selectbox("Select a sector", ranking["sector"].tolist())
-selected = ranking.loc[ranking["sector"] == sector].iloc[0]
-st.subheader(f"{sector} details")
-detail_columns = st.columns(2)
-detail_columns[0].write(f"Recommendation: **{selected['recommendation']}**")
-detail_columns[0].write(f"Trend signal: **{selected['trend_signal']}**")
-detail_columns[0].write(f"Synergy: **{selected['synergy_label']}**")
-detail_columns[1].write(f"Confidence score: **{selected['confidence_score']:.1f}**")
-detail_columns[1].write(f"Google Trends data status: **{selected['trend_data_status'].upper()}**")
-detail_columns[1].write(f"Trend refresh mode: **{selected.get('trend_refresh_mode', 'unknown')}**")
-cache_age = selected.get("trend_cache_age_hours")
-detail_columns[1].write(f"Trend cache age: {cache_age:.1f} hours" if pd.notna(cache_age) else "Trend cache age: not applicable")
-detail_columns[1].write(f"Trend keywords: {selected.get('trend_keywords', '')}")
-detail_columns[0].write(f"Data quality: **{selected.get('data_quality_status', 'Unavailable')}**")
-detail_columns[0].write(f"Actionability: **{selected.get('actionability_status', 'Unavailable')}**")
-detail_columns[0].write(f"ML predicted outperform probability: **{selected.get('ml_predicted_outperform_probability', pd.NA)}**")
-detail_columns[0].write(f"ML predicted 4-week excess return: **{selected.get('ml_predicted_excess_return_4w', pd.NA)}**")
-detail_columns[1].write(f"Price data status: **{selected.get('price_data_status', 'Unavailable')}**")
-detail_columns[1].write(f"Market last date: {selected.get('market_last_date', 'Unavailable')}")
-detail_columns[1].write(f"Trend last date: {selected.get('trend_last_date', 'Unavailable')}")
-st.write(f"Explanation: {selected['short_explanation']}")
+    st.subheader("Analyst note")
+    st.write("Analysts should review whether the sector signal is supported by recent macro, earnings and valuation context.")
 
-feature_columns = ["trend_latest", "trend_momentum_4w", "trend_momentum_12w", "trend_z_score_12w", "trend_z_score_52w", "trend_percentile_52w", "momentum_21", "momentum_63", "momentum_126", "volatility_20", "drawdown_current", "trailingPE", "forwardPE", "priceToBook", "dividendYield", "beta", "marketCap"]
-st.json({column: selected.get(column) for column in feature_columns if column in selected.index})
+with quality_tab:
+    st.subheader("Data quality and limitations")
+    st.write(f"- Market data: {'complete' if db_status['market_rows'] > 0 else 'not available'}")
+    st.write(f"- Sector coverage: {db_status['sector_count'] or len(ranking)}/{len(ranking)}")
+    trend_rows = int(db_status.get("google_trends_rows") or 0)
+    trend_status_text = "pending" if trend_rows == 0 else "available"
+    if ranking["trend_data_status"].eq("demo").any():
+        trend_status_text = "demo"
+    st.write(f"- Google Trends: {trend_status_text}")
+    fundamentals_partial = ranking.apply(data_quality_label, axis=1).eq("Partial fundamentals").any()
+    st.write(f"- ETF fundamentals: {'partially available' if fundamentals_partial else 'available'}")
+    sentiment_status = "available" if ~ranking["sentiment_data_status"].isin(["not_used", "disabled_by_mode", "disabled_no_api_key", "missing"]).all() else "not used"
+    st.write(f"- Sentiment: {sentiment_status}")
+    st.caption("Google Trends is prepared in the pipeline but not imported in the current market/fundamental baseline.")
 
-st.markdown("### Methodology")
-st.write(methodology_text)
+    with st.expander("Technical diagnostics", expanded=False):
+        technical_diagnostics(ranking, db_status)
 
-st.markdown("### How analysts should interpret the output")
-st.markdown("- **Research Candidate:** candidate for deeper analyst review; not an automatic action.\n- **Watch:** monitor closely, but no automatic action.\n- **Neutral:** keep under observation or benchmark-level exposure.\n- **Avoid:** deprioritize unless supported by external analyst conviction.\n- **Research Prototype:** demo/prototype-only signal.\n- **Insufficient Data:** not enough usable input data.")
+with validation_tab:
+    st.subheader("Validation and Backtest Summary")
+    if BACKTEST_RESULTS_PATH.exists() and BACKTEST_METRICS_PATH.exists():
+        backtest_results = pd.read_csv(BACKTEST_RESULTS_PATH)
+        backtest_metrics = pd.read_csv(BACKTEST_METRICS_PATH)
+        st.caption("Market-only validation. Google Trends validation requires imported historical trend data.")
+        if not backtest_results.empty and {"holding_end_date", "portfolio_return_cumulative", "equal_weight_return_cumulative", "spy_return_cumulative"}.issubset(backtest_results.columns):
+            chart_data = backtest_results.set_index("holding_end_date")[["portfolio_return_cumulative", "equal_weight_return_cumulative", "spy_return_cumulative"]]
+            chart_data = chart_data.rename(columns={
+                "portfolio_return_cumulative": "Strategy cumulative return",
+                "equal_weight_return_cumulative": "Equal weight return",
+                "spy_return_cumulative": "SPY return",
+            })
+            st.line_chart(chart_data)
+        with st.expander("Backtest metrics", expanded=False):
+            st.dataframe(backtest_metrics, width="stretch", hide_index=True)
+    else:
+        st.info("Backtest outputs are not available yet.")
 
-st.markdown("### Data quality interpretation")
-st.markdown("- **manual_csv:** real Google Trends data exported manually from Google Trends.\n- **live_pytrends:** real Google Trends data from a current pytrends request.\n- **external_api:** future external Trends provider integration.\n- **cache:** previously loaded Google Trends data.\n- **demo:** synthetic prototype data used when live Google Trends is unavailable.\n- **fallback:** neutral placeholder and weakest data quality.")
-st.caption("Dashboard command: `python -m streamlit run app/app.py`")
+    st.subheader("AI Research Signal")
+    ml_statuses = ", ".join(sorted(ranking["ml_model_status"].fillna("not_trained").astype(str).unique()))
+    st.write(f"ML status: **{ml_statuses}**")
+    st.write("The ML layer estimates the probability that a sector outperforms SPY over a 4-week horizon. It is used as a supporting research signal.")
+    st.dataframe(ml_summary_table(ranking), width="stretch", hide_index=True)
 
-st.markdown("---")
-st.header("Backtest")
-BACKTEST_RESULTS = DATA_PATH.parent / "backtest_results.csv"
-BACKTEST_METRICS = DATA_PATH.parent / "backtest_metrics.csv"
-if not BACKTEST_RESULTS.exists() or not BACKTEST_METRICS.exists():
-    st.info("Backtest outputs are not available. Run `python src/backtesting.py`.")
-else:
-    backtest_results = pd.read_csv(BACKTEST_RESULTS)
-    backtest_metrics = pd.read_csv(BACKTEST_METRICS)
-    st.caption("This is a market-only historical backtest. Google Trends validation requires stable historical trend data and is not yet fully implemented.")
-    if not backtest_results.empty:
-        chart_data = backtest_results.set_index("holding_end_date")[["portfolio_return_cumulative", "equal_weight_return_cumulative", "spy_return_cumulative"]]
-        st.line_chart(chart_data)
-    st.dataframe(backtest_metrics, width="stretch", hide_index=True)
+    with st.expander("Technical ML diagnostics", expanded=False):
+        if ML_EVALUATION_METRICS_PATH.exists():
+            st.dataframe(pd.read_csv(ML_EVALUATION_METRICS_PATH), width="stretch", hide_index=True)
+        else:
+            st.info("ML evaluation metrics are not available.")
+        if ML_FEATURE_IMPORTANCE_PATH.exists():
+            importance = pd.read_csv(ML_FEATURE_IMPORTANCE_PATH)
+            if not importance.empty:
+                st.bar_chart(importance.head(12).set_index("feature")["importance"])
+
+if show_technical:
+    st.markdown("---")
+    technical_diagnostics(ranking, db_status)
