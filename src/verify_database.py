@@ -14,7 +14,7 @@ from src.database import get_connection, get_database_path, table_exists
 from src.db_schema import create_database_schema
 
 KEY_TABLES = ["sectors", "market_prices", "market_indicators", "fundamentals"]
-ALL_TABLES = KEY_TABLES + ["google_trends", "trend_features", "recommendation_scores", "pipeline_runs"]
+ALL_TABLES = KEY_TABLES + ["google_trends", "trend_features", "ml_sector_rankings", "pipeline_runs"]
 
 
 def table_row_count(table_name: str) -> int:

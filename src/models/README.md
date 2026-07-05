@@ -1,15 +1,5 @@
-# Scoring & Recommendation Models
+# ML Models
 
-## Purpose
-This module contains the core recommendation engine logic and scoring algorithms.
+This project uses a supervised machine-learning model for sector ETF outperformance prediction.
 
-## Key Components
-- **recommendation_engine.py**: Main scoring logic for stocks and sectors
-- **scoring_rules.py**: Defines rules for calculating recommendation scores
-- **explainability.py**: Provides interpretable output for recommendations
-
-## Responsibilities
-- Implement scoring algorithms based on selected indicators
-- Generate recommendation rankings
-- Explain recommendation rationale
-- Handle sector-level and individual stock recommendations
+Active model logic lives in `src/ml_model.py`.

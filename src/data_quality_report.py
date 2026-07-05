@@ -25,7 +25,7 @@ EXPECTED_TABLES = [
     "fundamentals",
     "google_trends",
     "trend_features",
-    "recommendation_scores",
+    "ml_sector_rankings",
     "pipeline_runs",
 ]
 IMPORTANT_TABLES = ["sectors", "market_prices", "market_indicators", "fundamentals"]
@@ -291,12 +291,12 @@ def missing_values_summary(connection: sqlite3.Connection) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def recommendation_score_quality(connection: sqlite3.Connection) -> dict[str, Any]:
-    scores = _read_table(connection, "recommendation_scores")
-    if scores.empty:
+def ml_ranking_quality(connection: sqlite3.Connection) -> dict[str, Any]:
+    rankings = _read_table(connection, "ml_sector_rankings")
+    if rankings.empty:
         return {"status": "EMPTY", "latest_run_id": "", "latest_run_timestamp": "", "number_of_sectors": 0}
-    latest_timestamp = scores["run_timestamp"].max()
-    latest = scores.loc[scores["run_timestamp"].eq(latest_timestamp)].copy()
+    latest_timestamp = rankings["run_timestamp"].max()
+    latest = rankings.loc[rankings["run_timestamp"].eq(latest_timestamp)].copy()
     latest_run_id = str(latest["run_id"].iloc[0]) if "run_id" in latest and not latest.empty else ""
     return {
         "status": "OK",
@@ -304,12 +304,9 @@ def recommendation_score_quality(connection: sqlite3.Connection) -> dict[str, An
         "latest_run_timestamp": latest_timestamp,
         "number_of_sectors": int(latest["sector"].nunique()) if "sector" in latest else len(latest),
         "operating_mode": ", ".join(sorted(latest["operating_mode"].dropna().astype(str).unique())) if "operating_mode" in latest else "",
-        "scoring_profile": ", ".join(sorted(latest["scoring_profile"].dropna().astype(str).unique())) if "scoring_profile" in latest else "",
-        "missing_total_score": int(latest["total_score"].isna().sum()) if "total_score" in latest else len(latest),
-        "missing_recommendation": int(latest["recommendation"].isna().sum()) if "recommendation" in latest else len(latest),
-        "missing_data_quality_status": int(latest["data_quality_status"].isna().sum()) if "data_quality_status" in latest else len(latest),
-        "missing_actionability_status": int(latest["actionability_status"].isna().sum()) if "actionability_status" in latest else len(latest),
-        "missing_ml_predictions": int(latest[["ml_predicted_outperform_probability", "ml_predicted_excess_return_4w"]].isna().any(axis=1).sum()) if {"ml_predicted_outperform_probability", "ml_predicted_excess_return_4w"}.issubset(latest.columns) else len(latest),
+        "missing_ml_probability": int(latest["ml_predicted_outperform_probability"].isna().sum()) if "ml_predicted_outperform_probability" in latest else len(latest),
+        "missing_model_confidence": int(latest["ml_model_confidence"].isna().sum()) if "ml_model_confidence" in latest else len(latest),
+        "missing_data_readiness_status": int(latest["data_readiness_status"].isna().sum()) if "data_readiness_status" in latest else len(latest),
     }
 
 
@@ -357,7 +354,7 @@ def key_issues(
             issues.append("google_trends table is empty; import manual Google Trends CSVs for full mode.")
     trend_features_row = row_counts.loc[row_counts["table_name"].eq("trend_features")]
     if not trend_features_row.empty and int(trend_features_row["row_count"].iloc[0]) == 0:
-        issues.append("trend_features table is empty; trend feature scoring cannot use DB trend inputs yet.")
+        issues.append("trend_features table is empty; optional trend features are not available for ML experiments yet.")
     if _fundamental_column_missing(missing, "beta"):
         issues.append("fundamentals beta is missing for most ETFs.")
     if _fundamental_column_missing(missing, "market_cap"):
@@ -410,7 +407,7 @@ def write_markdown_report(
     indicators: pd.DataFrame,
     fundamentals: pd.DataFrame,
     trends: pd.DataFrame,
-    recommendation: dict[str, Any],
+    ml_ranking: dict[str, Any],
     pipeline: dict[str, Any],
     issues: list[str],
     steps: list[str],
@@ -455,18 +452,15 @@ Google Trends data is optional in market/fundamental mode. If raw trends are mis
 
 {_markdown_table(trends, max_rows=30)}
 
-## 7. Recommendation Output Quality
-- Latest run id: {recommendation.get("latest_run_id", "")}
-- Latest run timestamp: {recommendation.get("latest_run_timestamp", "")}
-- Number of sectors in latest run: {recommendation.get("number_of_sectors", 0)}
-- Operating mode: {recommendation.get("operating_mode", "")}
-- Scoring profile: {recommendation.get("scoring_profile", "")}
-- Missing total_score: {recommendation.get("missing_total_score", 0)}
-- Missing recommendation: {recommendation.get("missing_recommendation", 0)}
-- Missing data_quality_status: {recommendation.get("missing_data_quality_status", 0)}
-- Missing actionability_status: {recommendation.get("missing_actionability_status", 0)}
-- Missing ML predictions: {recommendation.get("missing_ml_predictions", 0)}
-- Status: {recommendation.get("status", "")}
+## 7. ML Ranking Output Quality
+- Latest run id: {ml_ranking.get("latest_run_id", "")}
+- Latest run timestamp: {ml_ranking.get("latest_run_timestamp", "")}
+- Number of sectors in latest run: {ml_ranking.get("number_of_sectors", 0)}
+- Operating mode: {ml_ranking.get("operating_mode", "")}
+- Missing ML probability: {ml_ranking.get("missing_ml_probability", 0)}
+- Missing model confidence: {ml_ranking.get("missing_model_confidence", 0)}
+- Missing data readiness status: {ml_ranking.get("missing_data_readiness_status", 0)}
+- Status: {ml_ranking.get("status", "")}
 
 ## 8. Pipeline Run History
 - Number of runs: {pipeline.get("number_of_runs", 0)}
@@ -499,7 +493,7 @@ def generate_data_quality_report(db_path: Path, output_dir: Path) -> dict[str, A
         fundamentals = fundamentals_quality(connection)
         trends = google_trends_quality(connection)
         missing = missing_values_summary(connection)
-        recommendation = recommendation_score_quality(connection)
+        ml_ranking = ml_ranking_quality(connection)
         pipeline = pipeline_run_summary(connection)
 
     issues = key_issues(row_counts, sectors, prices, indicators, fundamentals, trends, missing)
@@ -517,13 +511,13 @@ def generate_data_quality_report(db_path: Path, output_dir: Path) -> dict[str, A
         frame.to_csv(output_dir / f"{name}.csv", index=False)
 
     markdown_path = output_dir / "data_quality_summary.md"
-    write_markdown_report(markdown_path, db_path, row_counts, sectors, prices, indicators, fundamentals, trends, recommendation, pipeline, issues, steps)
+    write_markdown_report(markdown_path, db_path, row_counts, sectors, prices, indicators, fundamentals, trends, ml_ranking, pipeline, issues, steps)
     return {
         "markdown_path": markdown_path,
         "row_counts": row_counts,
         "sector_summary": sectors,
         "issues": issues,
-        "recommendation": recommendation,
+        "ml_ranking": ml_ranking,
         "pipeline": pipeline,
     }
 

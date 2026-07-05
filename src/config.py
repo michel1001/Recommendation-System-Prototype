@@ -27,7 +27,7 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 MODELS_DIR = PROJECT_ROOT / "models"
 HTML_REPORT_PATH = REPORTS_DIR / "html" / "sector_monitoring_report.html"
-RANKING_PATH = PROCESSED_DATA_DIR / "recommendation_scores.csv"
+RANKING_PATH = PROCESSED_DATA_DIR / "ml_sector_ranking.csv"
 BACKTEST_RESULTS_PATH = PROCESSED_DATA_DIR / "backtest_results.csv"
 BACKTEST_METRICS_PATH = PROCESSED_DATA_DIR / "backtest_metrics.csv"
 ML_TRAINING_DATASET_PATH = PROCESSED_DATA_DIR / "ml_training_dataset.csv"
@@ -79,17 +79,6 @@ SECTOR_REPRESENTATIVE_TICKERS = {
     "Communication Services": ["GOOGL", "META", "NFLX", "DIS", "TMUS"],
 }
 
-SCORING_WEIGHTS = {"trend_score": 0.40, "momentum_score": 0.25, "fundamental_score": 0.20, "risk_score": 0.15}
-SCORING_WEIGHTS_BY_MODE = {
-    "full": {"trend_score": 0.40, "momentum_score": 0.25, "fundamental_score": 0.20, "risk_score": 0.15},
-    "market_fundamental": {"trend_score": 0.0, "momentum_score": 0.40, "fundamental_score": 0.30, "risk_score": 0.30},
-    "demo": {"trend_score": 0.40, "momentum_score": 0.25, "fundamental_score": 0.20, "risk_score": 0.15},
-}
-SCORING_PROFILE_BY_MODE = {
-    "full": "full_trend_market_fundamental",
-    "market_fundamental": "market_fundamental_only",
-    "demo": "demo_trend_market_fundamental",
-}
 OPERATING_MODE = "market_fundamental"
 ALLOWED_OPERATING_MODES = {"full", "market_fundamental", "demo"}
 DEFAULT_MARKET_PERIOD = "5y"
@@ -100,7 +89,6 @@ TREND_CACHE_MAX_AGE_HOURS = 168
 GOOGLE_TRENDS_MIN_SLEEP_SECONDS = 30
 GOOGLE_TRENDS_MAX_SLEEP_SECONDS = 90
 TREND_PROVIDER_ORDER = ["manual_csv", "external_api", "pytrends", "cache", "demo"]
-SCORING_MODE = "research"  # Allowed values: "demo" and "research".
 DATA_FRESHNESS_DAYS = 14
 DISCLAIMER = "Decision support only. No autonomous trading. Not financial advice."
 

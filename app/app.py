@@ -10,20 +10,19 @@ import streamlit as st
 from src.config import ML_EVALUATION_METRICS_PATH, ML_FEATURE_IMPORTANCE_PATH
 from src.dashboard_helpers import (
     SECTOR_REPRESENTATIVE_STOCKS,
-    component_rows,
     data_quality_label,
     ensure_dashboard_columns,
+    feature_snapshot_rows,
     management_ranking_table,
     ml_summary_table,
+    probability_bar_data,
     representative_stock_fallback,
-    risk_level,
     sector_caveats,
-    signal_label,
 )
 from src.database import get_connection, table_exists
 
 
-DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "recommendation_scores.csv"
+DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "ml_sector_ranking.csv"
 BACKTEST_RESULTS_PATH = DATA_PATH.parent / "backtest_results.csv"
 BACKTEST_METRICS_PATH = DATA_PATH.parent / "backtest_metrics.csv"
 
@@ -96,15 +95,6 @@ def database_management_status() -> dict:
     return status
 
 
-def score_bar_data(ranking: pd.DataFrame) -> pd.DataFrame:
-    return (
-        ranking[["sector", "total_score"]]
-        .sort_values("total_score", ascending=False)
-        .rename(columns={"sector": "Sector", "total_score": "Total Score"})
-        .set_index("Sector")
-    )
-
-
 def technical_diagnostics(ranking: pd.DataFrame, db_status: dict) -> None:
     """Optional diagnostics for development use."""
     st.subheader("Technical diagnostics")
@@ -137,15 +127,15 @@ def technical_diagnostics(ranking: pd.DataFrame, db_status: dict) -> None:
 st.set_page_config(page_title="Sector Monitoring Management Dashboard", layout="wide")
 
 st.title("Sector Monitoring Management Dashboard")
-st.caption("Research-oriented overview of sector attractiveness, risk and data quality")
+st.caption("Research-oriented overview of ML-predicted sector outperformance versus SPY")
 
 show_technical = st.sidebar.toggle("Show technical diagnostics", value=False)
 
 if not DATA_PATH.exists():
-    st.warning("No ranking data found. Run `python src/pipeline.py --mode market_fundamental --data-source db` first.")
+    st.warning("No ML ranking data found. Run `python src/pipeline.py --mode market_fundamental --data-source db` first.")
     st.stop()
 
-ranking = ensure_dashboard_columns(pd.read_csv(DATA_PATH)).sort_values("total_score", ascending=False).reset_index(drop=True)
+ranking = ensure_dashboard_columns(pd.read_csv(DATA_PATH)).sort_values("ml_predicted_outperform_probability", ascending=False, na_position="last").reset_index(drop=True)
 db_status = database_management_status()
 
 overview_tab, detail_tab, quality_tab, validation_tab = st.tabs(["Overview", "Sector Details", "Data Quality", "Validation"])
@@ -156,14 +146,15 @@ with overview_tab:
     kpis = st.columns(3)
     kpis[0].metric("Top ranked sector", f"{best_sector['sector']} ({best_sector['ticker']})")
     kpis[1].metric("Sectors under review", len(ranking))
-    kpis[2].metric("Average sector score", f"{ranking['total_score'].mean():.1f}")
+    avg_probability = ranking["ml_predicted_outperform_probability"].mean()
+    kpis[2].metric("Average ML probability", "" if pd.isna(avg_probability) else f"{avg_probability:.1%}")
 
     st.subheader("Sector Ranking Overview")
     management_table = management_ranking_table(ranking)
     st.dataframe(management_table, width="stretch", hide_index=True)
 
-    st.subheader("Sector score overview")
-    st.bar_chart(score_bar_data(ranking))
+    st.subheader("ML Probability Overview")
+    st.bar_chart(probability_bar_data(ranking))
 
 with detail_tab:
     st.subheader("Sector Details")
@@ -171,14 +162,14 @@ with detail_tab:
     selected = ranking.loc[ranking["sector"].eq(selected_sector)].iloc[0]
 
     conclusion_cols = st.columns(3)
-    conclusion_cols[0].metric("Research signal", signal_label(selected["recommendation"]))
-    conclusion_cols[1].metric("Total score", f"{selected['total_score']:.1f}")
-    conclusion_cols[2].metric("Risk level", risk_level(selected["risk_score"]))
-    st.info(selected.get("short_explanation") or "Current sector signal should be reviewed by analysts in context.")
+    probability = pd.to_numeric(selected["ml_predicted_outperform_probability"], errors="coerce")
+    conclusion_cols[0].metric("ML probability", "" if pd.isna(probability) else f"{probability:.1%}")
+    conclusion_cols[1].metric("Model confidence", f"{selected['ml_model_confidence']:.1f}")
+    conclusion_cols[2].metric("Model", selected.get("ml_classifier_model") or selected.get("ml_model_status"))
+    st.info(selected.get("short_explanation") or "Current ML signal should be reviewed by analysts in context.")
 
-    st.subheader("What drives the signal?")
-    components = component_rows(selected)
-    st.bar_chart(components.set_index("Component")["Score"])
+    st.subheader("Current ML Feature Snapshot")
+    st.dataframe(feature_snapshot_rows(selected), width="stretch", hide_index=True)
 
     st.subheader("Key risks / caveats")
     for caveat in sector_caveats(selected):
@@ -189,7 +180,7 @@ with detail_tab:
     st.dataframe(load_representative_stock_performance(selected_sector), width="stretch", hide_index=True)
 
     st.subheader("Analyst note")
-    st.write("Analysts should review whether the sector signal is supported by recent macro, earnings and valuation context.")
+    st.write("Analysts should review whether the ML outperformance signal is supported by recent macro, earnings and valuation context.")
 
 with quality_tab:
     st.subheader("Data quality and limitations")
@@ -204,7 +195,7 @@ with quality_tab:
     st.write(f"- ETF fundamentals: {'partially available' if fundamentals_partial else 'available'}")
     sentiment_status = "available" if ~ranking["sentiment_data_status"].isin(["not_used", "disabled_by_mode", "disabled_no_api_key", "missing"]).all() else "not used"
     st.write(f"- Sentiment: {sentiment_status}")
-    st.caption("Google Trends is prepared in the pipeline but not imported in the current market/fundamental baseline.")
+    st.caption("Google Trends is prepared as an optional feature source. The current default model can run without active trend inputs.")
 
     with st.expander("Technical diagnostics", expanded=False):
         technical_diagnostics(ranking, db_status)
@@ -231,7 +222,7 @@ with validation_tab:
     st.subheader("AI Research Signal")
     ml_statuses = ", ".join(sorted(ranking["ml_model_status"].fillna("not_trained").astype(str).unique()))
     st.write(f"ML status: **{ml_statuses}**")
-    st.write("The ML layer estimates the probability that a sector outperforms SPY over a 4-week horizon. It is used as a supporting research signal.")
+    st.write("The ML model estimates the probability that a sector outperforms SPY over a 4-week horizon. The ranking is derived from this probability.")
     st.dataframe(ml_summary_table(ranking), width="stretch", hide_index=True)
 
     with st.expander("Technical ML diagnostics", expanded=False):

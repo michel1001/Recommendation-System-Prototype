@@ -2,7 +2,7 @@ import json
 
 import pandas as pd
 
-from src.scoring import calculate_relative_scores
+from src.features import assess_data_readiness
 from src.sentiment_provider import DemoSentimentProvider, FinnhubSentimentProvider, SentimentProvider, aggregate_sector_sentiment, sentiment_not_used_features
 
 
@@ -82,14 +82,14 @@ def test_sentiment_columns_can_be_merged_into_feature_frame():
         "price_data_status": "live",
         "market_last_date": pd.Timestamp.today().strftime("%Y-%m-%d"),
         "operating_mode": "full",
-        "scoring_profile": "full_trend_market_fundamental",
         **sentiment,
     }
 
-    scored = calculate_relative_scores(pd.DataFrame([row]), operating_mode="full")
+    frame = pd.DataFrame([row])
 
-    assert "sentiment_score_component" in scored.columns
-    assert scored["sentiment_data_status"].iloc[0] == "demo"
+    assert "sentiment_score_component" in frame.columns
+    assert frame["sentiment_data_status"].iloc[0] == "demo"
+    assert assess_data_readiness(frame.iloc[0]) == "Ready for ML inference"
 
 
 def test_market_fundamental_mode_works_without_sentiment():
@@ -114,11 +114,10 @@ def test_market_fundamental_mode_works_without_sentiment():
         "price_data_status": "live",
         "market_last_date": pd.Timestamp.today().strftime("%Y-%m-%d"),
         "operating_mode": "market_fundamental",
-        "scoring_profile": "market_fundamental_only",
         **sentiment_not_used_features(),
     }
 
-    scored = calculate_relative_scores(pd.DataFrame([row]), operating_mode="market_fundamental")
+    frame = pd.DataFrame([row])
 
-    assert scored["sentiment_data_status"].iloc[0] == "not_used"
-    assert scored["data_quality_status"].iloc[0] == "Market/fundamental research signal"
+    assert frame["sentiment_data_status"].iloc[0] == "not_used"
+    assert assess_data_readiness(frame.iloc[0]) == "Ready for ML inference"

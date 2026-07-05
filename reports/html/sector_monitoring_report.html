@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>AI Sector Monitoring Report</title>
+  <title>ML Sector Monitoring Report</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
     h1, h2 { color: #0f172a; }
@@ -13,328 +13,41 @@
   </style>
 </head>
 <body>
-  <h1>AI Sector Monitoring Report</h1>
-  <p><strong>Generated:</strong> 2026-07-01 19:29:36</p>
+  <h1>ML Sector Monitoring Report</h1>
+  <p><strong>Generated:</strong> 2026-07-04 13:21:56</p>
   <div class="note">Educational prototype only. Not financial advice.</div>
 
   <h2>Executive Summary</h2>
-  <p>This report summarizes the current market, risk, relative-strength, fundamental, and ML-based research signals for sector ETFs. Google Trends are not used in this run.</p>
-  <ul>
-    <li><strong>Utilities</strong> — score 61.1, trend 0.0, synergy Fundamental sleeper</li><li><strong>Financials</strong> — score 60.5, trend 0.0, synergy Balanced setup</li><li><strong>Healthcare</strong> — score 59.9, trend 0.0, synergy Balanced setup</li><li><strong>Materials</strong> — score 57.6, trend 0.0, synergy Fundamental sleeper</li><li><strong>Industrials</strong> — score 56.1, trend 0.0, synergy Balanced setup</li>
-  </ul>
+  <p>The final modelling approach is a supervised machine-learning classifier. It estimates whether each sector ETF will outperform SPY over the next 4 weeks. The displayed ranking is derived only from the model probability.</p>
+  <ul><li><strong>Technology</strong> (XLK) - 69.2% ML probability</li><li><strong>Materials</strong> (XLB) - 59.8% ML probability</li><li><strong>Utilities</strong> (XLU) - 59.6% ML probability</li><li><strong>Communication Services</strong> (XLC) - 54.1% ML probability</li><li><strong>Financials</strong> (XLF) - 51.8% ML probability</li></ul>
+  <p><strong>Technology</strong> ranks first because the supervised ML model assigns the highest 4-week outperformance probability versus SPY (69.2%). High outperformance probability. Current model ranking is based on market/fundamental features; Google Trends are not active.</p>
 
-  <h2>Data Quality</h2>
-  <p>Trend-source status is shown explicitly so analysts can distinguish observed attention signals from demonstration data.</p>
-  <ul>
-    <li><strong>Google Trends not used:</strong> 11 sector(s) were scored in market/fundamental-only mode.</li>
-  </ul>
+  <h2>Pipeline</h2>
+  <p>SQLite data -> Data Cleaning -> Feature Engineering -> time-based Train/Test Split -> RandomForestClassifier -> Outperformance Probability -> Ranking/Dashboard.</p>
 
-  <h2>Data Storage and Reproducibility</h2>
-  <p>Market data, fundamentals, imported Google Trends CSV data, indicators, and scoring outputs can be persisted in a local SQLite database. Pipeline runs can be reproduced from stored data, so <code>yfinance</code> does not need to be called on every run. Manual Google Trends CSV imports store source-file, geography, and timeframe metadata for analyst review.</p>
-
-  <h2>Operating Mode and Scoring Profile</h2>
-  <ul>
-    <li><strong>Operating mode:</strong> market_fundamental</li>
-    <li><strong>Scoring profile:</strong> market_fundamental_only</li>
-  </ul>
-  <p>This report was generated in market/fundamental-only mode. Google Trends were not used in scoring because real Google Trends data was unavailable or disabled. This mode provides a usable research baseline based on market and fundamental indicators.</p>
-
-  <h2>Google Trends Operational Reliability</h2>
-  <p>Google Trends live access may be rate-limited because pytrends uses unofficial web requests. This prototype uses refresh modes and cache-first behavior to avoid unnecessary live requests. Demo mode is used only when live/cache data is unavailable or intentionally selected. The <code>trend_data_status</code> and <code>trend_cache_age_hours</code> fields document the quality and recency of each sector's attention signal.</p>
-  <ul>
-    <li><strong>Refresh mode(s) in this run:</strong> auto</li>
-    <li><strong>Freshness threshold:</strong> cached trends older than 168 hours should be refreshed.</li>
-    <li><strong>Stale cache warnings:</strong> 0</li>
-  </ul>
+  <h2>Current ML Ranking</h2>
   <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
-      <th>sector</th>
-      <th>trend_data_status</th>
-      <th>trend_provider</th>
-      <th>trend_source_detail</th>
-      <th>trend_refresh_mode</th>
-      <th>trend_cache_age_hours</th>
-      <th>trend_last_date</th>
-      <th>trend_observations</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Utilities</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Financials</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Healthcare</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Materials</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Industrials</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Consumer Staples</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Real Estate</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Technology</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Consumer Discretionary</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Energy</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Communication Services</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-      <td>0</td>
-    </tr>
-  </tbody>
-</table>
-
-  <h2>Actionability</h2>
-  <p>Research Prototype means demo/synthetic data or an unvalidated signal. Research Candidate requires live or cached data and remains subject to analyst review. A validated research candidate requires historical validation and analyst review.</p>
-  <table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>sector</th>
-      <th>data_quality_status</th>
-      <th>actionability_status</th>
-      <th>price_data_status</th>
-      <th>market_last_date</th>
-      <th>trend_data_status</th>
-      <th>trend_provider</th>
-      <th>trend_refresh_mode</th>
-      <th>trend_cache_age_hours</th>
-      <th>trend_last_date</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Utilities</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Financials</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Healthcare</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Materials</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Industrials</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Consumer Staples</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Real Estate</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Technology</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Consumer Discretionary</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Energy</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Communication Services</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>db</td>
-      <td>2026-07-01</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-  <h2>Top-sector Interpretation</h2>
-  <p><strong>Utilities</strong> ranks first because its combined relative score is 61.1. Its strongest component is fundamentals (86.2). Market/fundamental-only mode: Google Trends not used. Its Google Trends input is marked not_used; source recency and coverage should still be reviewed. Human analyst review is required before any decision-support use.</p>
-
-  <h2>Top 5 Sectors</h2>
-  <table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
+      <th>rank</th>
+      <th>date</th>
       <th>sector</th>
       <th>ticker</th>
+      <th>ml_predicted_outperform_probability</th>
+      <th>ml_model_confidence</th>
+      <th>ml_signal_label</th>
+      <th>ml_model_status</th>
+      <th>ml_classifier_model</th>
+      <th>ml_feature_set</th>
+      <th>data_readiness_status</th>
+      <th>short_explanation</th>
+      <th>market_last_date</th>
+      <th>price_data_status</th>
+      <th>trend_data_status</th>
+      <th>trend_refresh_mode</th>
+      <th>trend_provider</th>
+      <th>trend_source_detail</th>
+      <th>sentiment_data_status</th>
       <th>momentum_21</th>
       <th>momentum_63</th>
       <th>momentum_126</th>
@@ -344,1513 +57,37 @@
       <th>distance_to_ma_200</th>
       <th>risk_adjusted_return_63</th>
       <th>volume_momentum_20</th>
+      <th>relative_strength_vs_spy_63</th>
+      <th>relative_strength_vs_spy_126</th>
       <th>trailingPE</th>
       <th>forwardPE</th>
       <th>priceToBook</th>
       <th>dividendYield</th>
       <th>beta</th>
       <th>marketCap</th>
-      <th>trend_mean</th>
-      <th>trend_latest</th>
-      <th>trend_momentum_4w</th>
-      <th>trend_momentum_12w</th>
-      <th>trend_z_score_12w</th>
-      <th>trend_z_score_52w</th>
-      <th>trend_spike</th>
-      <th>trend_acceleration</th>
-      <th>trend_volatility</th>
-      <th>trend_percentile_52w</th>
-      <th>trend_observations</th>
-      <th>trend_last_date</th>
-      <th>relative_strength_vs_spy_63</th>
-      <th>relative_strength_vs_spy_126</th>
-      <th>sentiment_score</th>
-      <th>sentiment_score_component</th>
-      <th>sentiment_bullish_percent</th>
-      <th>sentiment_bearish_percent</th>
-      <th>sentiment_buzz</th>
-      <th>sentiment_article_count</th>
-      <th>sentiment_coverage_count</th>
-      <th>sentiment_data_status</th>
-      <th>sentiment_provider</th>
-      <th>sentiment_last_updated</th>
-      <th>trend_data_status</th>
-      <th>trend_refresh_mode</th>
-      <th>trend_cache_age_hours</th>
-      <th>trend_provider</th>
-      <th>trend_source_detail</th>
-      <th>trend_keywords</th>
-      <th>market_last_date</th>
-      <th>price_data_status</th>
-      <th>scoring_mode</th>
-      <th>operating_mode</th>
-      <th>scoring_profile</th>
-      <th>momentum_score</th>
-      <th>risk_score</th>
-      <th>fundamental_score</th>
-      <th>trend_score</th>
-      <th>total_score</th>
-      <th>trend_signal</th>
-      <th>synergy_label</th>
-      <th>synergy_score</th>
-      <th>confidence_score</th>
-      <th>data_quality_status</th>
-      <th>actionability_status</th>
-      <th>recommendation</th>
-      <th>short_explanation</th>
-      <th>ml_predicted_outperform_probability</th>
-      <th>ml_predicted_excess_return_4w</th>
-      <th>ml_model_status</th>
-      <th>ml_model_confidence</th>
-      <th>ml_classifier_model</th>
-      <th>ml_regression_model</th>
-      <th>ml_feature_set</th>
-      <th>ml_feature_mismatch_detail</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>Utilities</td>
-      <td>XLU</td>
-      <td>0.041879</td>
-      <td>-0.021464</td>
-      <td>0.047713</td>
-      <td>0.145009</td>
-      <td>0.0</td>
-      <td>-0.059187</td>
-      <td>0.004877</td>
-      <td>-0.148021</td>
-      <td>0.548164</td>
-      <td>20.664726</td>
-      <td>NaN</td>
-      <td>0.701750</td>
-      <td>2.68</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.173085</td>
-      <td>-0.041107</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>electricity prices, utility stocks, renewable energy</td>
+      <td>1</td>
       <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>35.414721</td>
-      <td>70.320698</td>
-      <td>86.236460</td>
-      <td>0.0</td>
-      <td>61.133036</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Fundamental sleeper</td>
-      <td>70.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Watch</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.595734</td>
-      <td>-0.005741</td>
-      <td>trained</td>
-      <td>19.146730</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Financials</td>
-      <td>XLF</td>
-      <td>0.069123</td>
-      <td>0.113733</td>
-      <td>-0.006056</td>
-      <td>0.164617</td>
-      <td>0.0</td>
-      <td>-0.025089</td>
-      <td>0.046078</td>
-      <td>0.690897</td>
-      <td>0.450492</td>
-      <td>17.346087</td>
-      <td>NaN</td>
-      <td>1.616251</td>
-      <td>1.54</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.037888</td>
-      <td>-0.094876</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>bank stocks, interest rates, financial sector</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>54.581222</td>
-      <td>75.582131</td>
-      <td>53.295846</td>
-      <td>0.0</td>
-      <td>60.495882</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Balanced setup</td>
-      <td>60.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Watch</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.518104</td>
-      <td>-0.004703</td>
-      <td>trained</td>
-      <td>3.620844</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Healthcare</td>
-      <td>XLV</td>
-      <td>0.079207</td>
-      <td>0.088261</td>
-      <td>0.024004</td>
-      <td>0.198087</td>
-      <td>0.0</td>
-      <td>-0.007403</td>
-      <td>0.063026</td>
-      <td>0.445570</td>
-      <td>0.406808</td>
-      <td>25.733807</td>
-      <td>NaN</td>
-      <td>1.253772</td>
-      <td>1.68</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.063359</td>
-      <td>-0.064817</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>healthcare stocks, biotech, pharma</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>54.756918</td>
-      <td>75.654700</td>
-      <td>51.132317</td>
-      <td>0.0</td>
-      <td>59.938872</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Balanced setup</td>
-      <td>60.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.516185</td>
-      <td>-0.004736</td>
-      <td>trained</td>
-      <td>3.236905</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Materials</td>
-      <td>XLB</td>
-      <td>0.008739</td>
-      <td>0.027917</td>
-      <td>0.122978</td>
-      <td>0.227909</td>
-      <td>0.0</td>
-      <td>-0.042055</td>
-      <td>0.063562</td>
-      <td>0.122491</td>
-      <td>0.401340</td>
-      <td>25.948408</td>
-      <td>NaN</td>
-      <td>0.649253</td>
-      <td>1.71</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.123704</td>
-      <td>0.034157</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>commodity prices, mining stocks, raw materials</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>44.892692</td>
-      <td>64.636526</td>
-      <td>67.444074</td>
-      <td>0.0</td>
-      <td>57.581257</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Fundamental sleeper</td>
-      <td>70.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.597970</td>
-      <td>-0.002938</td>
-      <td>trained</td>
-      <td>19.594088</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Industrials</td>
-      <td>XLI</td>
-      <td>0.075957</td>
-      <td>0.146942</td>
-      <td>0.182476</td>
-      <td>0.237923</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.128452</td>
-      <td>0.617606</td>
-      <td>0.415685</td>
-      <td>32.213478</td>
-      <td>NaN</td>
-      <td>1.885457</td>
-      <td>1.18</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.004678</td>
-      <td>0.093656</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>manufacturing, industrial stocks, infrastructure</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>72.483020</td>
-      <td>72.740965</td>
-      <td>17.585454</td>
-      <td>0.0</td>
-      <td>56.091134</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Balanced setup</td>
-      <td>60.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.339802</td>
-      <td>-0.005395</td>
-      <td>trained</td>
-      <td>32.039646</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-  <h2>Bottom 3 Sectors</h2>
-  <table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>sector</th>
-      <th>ticker</th>
-      <th>momentum_21</th>
-      <th>momentum_63</th>
-      <th>momentum_126</th>
-      <th>volatility_20</th>
-      <th>downside_volatility_20</th>
-      <th>drawdown_current</th>
-      <th>distance_to_ma_200</th>
-      <th>risk_adjusted_return_63</th>
-      <th>volume_momentum_20</th>
-      <th>trailingPE</th>
-      <th>forwardPE</th>
-      <th>priceToBook</th>
-      <th>dividendYield</th>
-      <th>beta</th>
-      <th>marketCap</th>
-      <th>trend_mean</th>
-      <th>trend_latest</th>
-      <th>trend_momentum_4w</th>
-      <th>trend_momentum_12w</th>
-      <th>trend_z_score_12w</th>
-      <th>trend_z_score_52w</th>
-      <th>trend_spike</th>
-      <th>trend_acceleration</th>
-      <th>trend_volatility</th>
-      <th>trend_percentile_52w</th>
-      <th>trend_observations</th>
-      <th>trend_last_date</th>
-      <th>relative_strength_vs_spy_63</th>
-      <th>relative_strength_vs_spy_126</th>
-      <th>sentiment_score</th>
-      <th>sentiment_score_component</th>
-      <th>sentiment_bullish_percent</th>
-      <th>sentiment_bearish_percent</th>
-      <th>sentiment_buzz</th>
-      <th>sentiment_article_count</th>
-      <th>sentiment_coverage_count</th>
-      <th>sentiment_data_status</th>
-      <th>sentiment_provider</th>
-      <th>sentiment_last_updated</th>
-      <th>trend_data_status</th>
-      <th>trend_refresh_mode</th>
-      <th>trend_cache_age_hours</th>
-      <th>trend_provider</th>
-      <th>trend_source_detail</th>
-      <th>trend_keywords</th>
-      <th>market_last_date</th>
-      <th>price_data_status</th>
-      <th>scoring_mode</th>
-      <th>operating_mode</th>
-      <th>scoring_profile</th>
-      <th>momentum_score</th>
-      <th>risk_score</th>
-      <th>fundamental_score</th>
-      <th>trend_score</th>
-      <th>total_score</th>
-      <th>trend_signal</th>
-      <th>synergy_label</th>
-      <th>synergy_score</th>
-      <th>confidence_score</th>
-      <th>data_quality_status</th>
-      <th>actionability_status</th>
-      <th>recommendation</th>
-      <th>short_explanation</th>
-      <th>ml_predicted_outperform_probability</th>
-      <th>ml_predicted_excess_return_4w</th>
-      <th>ml_model_status</th>
-      <th>ml_model_confidence</th>
-      <th>ml_classifier_model</th>
-      <th>ml_regression_model</th>
-      <th>ml_feature_set</th>
-      <th>ml_feature_mismatch_detail</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Consumer Discretionary</td>
-      <td>XLY</td>
-      <td>0.004315</td>
-      <td>0.089191</td>
-      <td>-0.017791</td>
-      <td>0.239329</td>
-      <td>0.0</td>
-      <td>-0.046739</td>
-      <td>0.009640</td>
-      <td>0.372669</td>
-      <td>0.483354</td>
-      <td>29.579721</td>
-      <td>NaN</td>
-      <td>0.706590</td>
-      <td>0.74</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.062430</td>
-      <td>-0.106611</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>retail sales, consumer spending, ecommerce</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>37.840459</td>
-      <td>62.304684</td>
-      <td>48.372464</td>
-      <td>0.0</td>
-      <td>48.339328</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Weak setup</td>
-      <td>35.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.450013</td>
-      <td>-0.006937</td>
-      <td>trained</td>
-      <td>9.997400</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Energy</td>
-      <td>XLE</td>
-      <td>-0.073735</td>
-      <td>-0.133611</td>
-      <td>0.189489</td>
-      <td>0.212231</td>
-      <td>0.0</td>
-      <td>-0.151614</td>
-      <td>0.034774</td>
-      <td>-0.629553</td>
-      <td>0.338381</td>
-      <td>19.833510</td>
-      <td>NaN</td>
-      <td>1.018421</td>
-      <td>2.65</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.285231</td>
-      <td>0.100669</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>oil price, energy stocks, natural gas</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>20.264282</td>
-      <td>42.336516</td>
-      <td>78.687305</td>
-      <td>0.0</td>
-      <td>44.412859</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Fundamental sleeper</td>
-      <td>70.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Avoid</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.423264</td>
-      <td>0.004230</td>
-      <td>trained</td>
-      <td>15.347225</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Communication Services</td>
-      <td>XLC</td>
-      <td>-0.047531</td>
-      <td>-0.006720</td>
-      <td>-0.065951</td>
-      <td>0.204967</td>
-      <td>0.0</td>
-      <td>-0.082986</td>
-      <td>-0.043493</td>
-      <td>-0.032787</td>
-      <td>0.676275</td>
-      <td>16.751333</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>1.21</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.158341</td>
-      <td>-0.154772</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>communication services stocks, streaming media, digital advertising</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>15.755230</td>
-      <td>58.252982</td>
-      <td>64.568345</td>
-      <td>0.0</td>
-      <td>43.148490</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Weak setup</td>
-      <td>35.0</td>
-      <td>85.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Avoid</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.541334</td>
-      <td>-0.005405</td>
-      <td>trained</td>
-      <td>8.266856</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-  <h2>Google Trends Signal Overview</h2>
-  <table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>sector</th>
-      <th>trend_signal</th>
-      <th>trend_data_status</th>
-      <th>trend_provider</th>
-      <th>trend_refresh_mode</th>
-      <th>trend_cache_age_hours</th>
-      <th>trend_latest</th>
-      <th>trend_momentum_4w</th>
-      <th>synergy_label</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Utilities</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Fundamental sleeper</td>
-    </tr>
-    <tr>
-      <td>Financials</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Balanced setup</td>
-    </tr>
-    <tr>
-      <td>Healthcare</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Balanced setup</td>
-    </tr>
-    <tr>
-      <td>Materials</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Fundamental sleeper</td>
-    </tr>
-    <tr>
-      <td>Industrials</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Balanced setup</td>
-    </tr>
-    <tr>
-      <td>Consumer Staples</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Weak setup</td>
-    </tr>
-    <tr>
-      <td>Real Estate</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Balanced setup</td>
-    </tr>
-    <tr>
-      <td>Technology</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Balanced setup</td>
-    </tr>
-    <tr>
-      <td>Consumer Discretionary</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Weak setup</td>
-    </tr>
-    <tr>
-      <td>Energy</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Fundamental sleeper</td>
-    </tr>
-    <tr>
-      <td>Communication Services</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Weak setup</td>
-    </tr>
-  </tbody>
-</table>
-
-  <h2>Synergy Analysis</h2>
-  <p>Synergy labels describe whether attention, momentum, and fundamentals point in the same direction. This helps research teams separate strong setups from hype-driven moves.</p>
-  <ul>
-    <li>Trend-confirmed opportunity: attention, momentum, and fundamentals are aligned.</li>
-    <li>Early attention signal: trend strength is high but momentum is still developing.</li>
-    <li>Hype risk: attention is strong but fundamentals are not supportive.</li>
-  </ul>
-
-  <h2>Full Ranking Table</h2>
-  <table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>sector</th>
-      <th>ticker</th>
-      <th>momentum_21</th>
-      <th>momentum_63</th>
-      <th>momentum_126</th>
-      <th>volatility_20</th>
-      <th>downside_volatility_20</th>
-      <th>drawdown_current</th>
-      <th>distance_to_ma_200</th>
-      <th>risk_adjusted_return_63</th>
-      <th>volume_momentum_20</th>
-      <th>trailingPE</th>
-      <th>forwardPE</th>
-      <th>priceToBook</th>
-      <th>dividendYield</th>
-      <th>beta</th>
-      <th>marketCap</th>
-      <th>trend_mean</th>
-      <th>trend_latest</th>
-      <th>trend_momentum_4w</th>
-      <th>trend_momentum_12w</th>
-      <th>trend_z_score_12w</th>
-      <th>trend_z_score_52w</th>
-      <th>trend_spike</th>
-      <th>trend_acceleration</th>
-      <th>trend_volatility</th>
-      <th>trend_percentile_52w</th>
-      <th>trend_observations</th>
-      <th>trend_last_date</th>
-      <th>relative_strength_vs_spy_63</th>
-      <th>relative_strength_vs_spy_126</th>
-      <th>sentiment_score</th>
-      <th>sentiment_score_component</th>
-      <th>sentiment_bullish_percent</th>
-      <th>sentiment_bearish_percent</th>
-      <th>sentiment_buzz</th>
-      <th>sentiment_article_count</th>
-      <th>sentiment_coverage_count</th>
-      <th>sentiment_data_status</th>
-      <th>sentiment_provider</th>
-      <th>sentiment_last_updated</th>
-      <th>trend_data_status</th>
-      <th>trend_refresh_mode</th>
-      <th>trend_cache_age_hours</th>
-      <th>trend_provider</th>
-      <th>trend_source_detail</th>
-      <th>trend_keywords</th>
-      <th>market_last_date</th>
-      <th>price_data_status</th>
-      <th>scoring_mode</th>
-      <th>operating_mode</th>
-      <th>scoring_profile</th>
-      <th>momentum_score</th>
-      <th>risk_score</th>
-      <th>fundamental_score</th>
-      <th>trend_score</th>
-      <th>total_score</th>
-      <th>trend_signal</th>
-      <th>synergy_label</th>
-      <th>synergy_score</th>
-      <th>confidence_score</th>
-      <th>data_quality_status</th>
-      <th>actionability_status</th>
-      <th>recommendation</th>
-      <th>short_explanation</th>
-      <th>ml_predicted_outperform_probability</th>
-      <th>ml_predicted_excess_return_4w</th>
-      <th>ml_model_status</th>
-      <th>ml_model_confidence</th>
-      <th>ml_classifier_model</th>
-      <th>ml_regression_model</th>
-      <th>ml_feature_set</th>
-      <th>ml_feature_mismatch_detail</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Utilities</td>
-      <td>XLU</td>
-      <td>0.041879</td>
-      <td>-0.021464</td>
-      <td>0.047713</td>
-      <td>0.145009</td>
-      <td>0.0</td>
-      <td>-0.059187</td>
-      <td>0.004877</td>
-      <td>-0.148021</td>
-      <td>0.548164</td>
-      <td>20.664726</td>
-      <td>NaN</td>
-      <td>0.701750</td>
-      <td>2.68</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.173085</td>
-      <td>-0.041107</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>electricity prices, utility stocks, renewable energy</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>35.414721</td>
-      <td>70.320698</td>
-      <td>86.236460</td>
-      <td>0.0</td>
-      <td>61.133036</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Fundamental sleeper</td>
-      <td>70.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Watch</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.595734</td>
-      <td>-0.005741</td>
-      <td>trained</td>
-      <td>19.146730</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Financials</td>
-      <td>XLF</td>
-      <td>0.069123</td>
-      <td>0.113733</td>
-      <td>-0.006056</td>
-      <td>0.164617</td>
-      <td>0.0</td>
-      <td>-0.025089</td>
-      <td>0.046078</td>
-      <td>0.690897</td>
-      <td>0.450492</td>
-      <td>17.346087</td>
-      <td>NaN</td>
-      <td>1.616251</td>
-      <td>1.54</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.037888</td>
-      <td>-0.094876</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>bank stocks, interest rates, financial sector</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>54.581222</td>
-      <td>75.582131</td>
-      <td>53.295846</td>
-      <td>0.0</td>
-      <td>60.495882</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Balanced setup</td>
-      <td>60.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Watch</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.518104</td>
-      <td>-0.004703</td>
-      <td>trained</td>
-      <td>3.620844</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Healthcare</td>
-      <td>XLV</td>
-      <td>0.079207</td>
-      <td>0.088261</td>
-      <td>0.024004</td>
-      <td>0.198087</td>
-      <td>0.0</td>
-      <td>-0.007403</td>
-      <td>0.063026</td>
-      <td>0.445570</td>
-      <td>0.406808</td>
-      <td>25.733807</td>
-      <td>NaN</td>
-      <td>1.253772</td>
-      <td>1.68</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.063359</td>
-      <td>-0.064817</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>healthcare stocks, biotech, pharma</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>54.756918</td>
-      <td>75.654700</td>
-      <td>51.132317</td>
-      <td>0.0</td>
-      <td>59.938872</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Balanced setup</td>
-      <td>60.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.516185</td>
-      <td>-0.004736</td>
-      <td>trained</td>
-      <td>3.236905</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Materials</td>
-      <td>XLB</td>
-      <td>0.008739</td>
-      <td>0.027917</td>
-      <td>0.122978</td>
-      <td>0.227909</td>
-      <td>0.0</td>
-      <td>-0.042055</td>
-      <td>0.063562</td>
-      <td>0.122491</td>
-      <td>0.401340</td>
-      <td>25.948408</td>
-      <td>NaN</td>
-      <td>0.649253</td>
-      <td>1.71</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.123704</td>
-      <td>0.034157</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>commodity prices, mining stocks, raw materials</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>44.892692</td>
-      <td>64.636526</td>
-      <td>67.444074</td>
-      <td>0.0</td>
-      <td>57.581257</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Fundamental sleeper</td>
-      <td>70.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.597970</td>
-      <td>-0.002938</td>
-      <td>trained</td>
-      <td>19.594088</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Industrials</td>
-      <td>XLI</td>
-      <td>0.075957</td>
-      <td>0.146942</td>
-      <td>0.182476</td>
-      <td>0.237923</td>
-      <td>0.0</td>
-      <td>0.000000</td>
-      <td>0.128452</td>
-      <td>0.617606</td>
-      <td>0.415685</td>
-      <td>32.213478</td>
-      <td>NaN</td>
-      <td>1.885457</td>
-      <td>1.18</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.004678</td>
-      <td>0.093656</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>manufacturing, industrial stocks, infrastructure</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>72.483020</td>
-      <td>72.740965</td>
-      <td>17.585454</td>
-      <td>0.0</td>
-      <td>56.091134</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Balanced setup</td>
-      <td>60.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.339802</td>
-      <td>-0.005395</td>
-      <td>trained</td>
-      <td>32.039646</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Consumer Staples</td>
-      <td>XLP</td>
-      <td>0.013410</td>
-      <td>0.014028</td>
-      <td>0.061957</td>
-      <td>0.174855</td>
-      <td>0.0</td>
-      <td>-0.076436</td>
-      <td>0.017557</td>
-      <td>0.080225</td>
-      <td>0.384712</td>
-      <td>25.016304</td>
-      <td>NaN</td>
-      <td>1.219326</td>
-      <td>2.62</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.137593</td>
-      <td>-0.026863</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>food prices, consumer staples, grocery prices</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>37.651369</td>
-      <td>63.125850</td>
-      <td>64.496864</td>
-      <td>0.0</td>
-      <td>53.347362</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Weak setup</td>
-      <td>35.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.497732</td>
-      <td>-0.003920</td>
-      <td>trained</td>
-      <td>0.453530</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Real Estate</td>
-      <td>XLRE</td>
-      <td>0.025537</td>
-      <td>0.086823</td>
-      <td>0.092173</td>
-      <td>0.194981</td>
-      <td>0.0</td>
-      <td>-0.143505</td>
-      <td>0.048546</td>
-      <td>0.445291</td>
-      <td>0.625462</td>
-      <td>32.688010</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>3.18</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.064797</td>
-      <td>0.003353</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>real estate market, REIT, mortgage rates</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>50.555168</td>
-      <td>46.085959</td>
-      <td>61.193910</td>
-      <td>0.0</td>
-      <td>52.406028</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Balanced setup</td>
-      <td>60.0</td>
-      <td>85.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.500108</td>
-      <td>-0.001594</td>
-      <td>trained</td>
-      <td>0.021514</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>Technology</td>
       <td>XLK</td>
+      <td>69.2%</td>
+      <td>38.378843</td>
+      <td>High outperformance probability</td>
+      <td>trained</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>High outperformance probability. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
       <td>-0.044238</td>
       <td>0.407826</td>
       <td>0.282649</td>
@@ -1860,222 +97,111 @@
       <td>0.235581</td>
       <td>0.932384</td>
       <td>0.293073</td>
+      <td>0.256205</td>
+      <td>0.193829</td>
       <td>37.285065</td>
       <td>NaN</td>
       <td>1.252720</td>
       <td>0.40</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>0.256205</td>
-      <td>0.193829</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>artificial intelligence, semiconductors, cloud computing</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>83.857269</td>
-      <td>37.676711</td>
-      <td>17.061281</td>
-      <td>0.0</td>
-      <td>49.964305</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Balanced setup</td>
-      <td>60.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.691894</td>
-      <td>-0.007079</td>
-      <td>trained</td>
-      <td>38.378843</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
     </tr>
     <tr>
-      <td>Consumer Discretionary</td>
-      <td>XLY</td>
-      <td>0.004315</td>
-      <td>0.089191</td>
-      <td>-0.017791</td>
-      <td>0.239329</td>
-      <td>0.0</td>
-      <td>-0.046739</td>
-      <td>0.009640</td>
-      <td>0.372669</td>
-      <td>0.483354</td>
-      <td>29.579721</td>
-      <td>NaN</td>
-      <td>0.706590</td>
-      <td>0.74</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.062430</td>
-      <td>-0.106611</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>retail sales, consumer spending, ecommerce</td>
+      <td>2</td>
+      <td>2026-07-01</td>
+      <td>Materials</td>
+      <td>XLB</td>
+      <td>59.8%</td>
+      <td>19.594088</td>
+      <td>High outperformance probability</td>
+      <td>trained</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>High outperformance probability. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
       <td>2026-07-01</td>
       <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>37.840459</td>
-      <td>62.304684</td>
-      <td>48.372464</td>
-      <td>0.0</td>
-      <td>48.339328</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Weak setup</td>
-      <td>35.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Neutral</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.450013</td>
-      <td>-0.006937</td>
-      <td>trained</td>
-      <td>9.997400</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Energy</td>
-      <td>XLE</td>
-      <td>-0.073735</td>
-      <td>-0.133611</td>
-      <td>0.189489</td>
-      <td>0.212231</td>
-      <td>0.0</td>
-      <td>-0.151614</td>
-      <td>0.034774</td>
-      <td>-0.629553</td>
-      <td>0.338381</td>
-      <td>19.833510</td>
-      <td>NaN</td>
-      <td>1.018421</td>
-      <td>2.65</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.285231</td>
-      <td>0.100669</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
       <td>not_used</td>
       <td>auto</td>
-      <td><NA></td>
       <td>disabled_by_mode</td>
       <td>Google Trends disabled in market/fundamental mode</td>
-      <td>oil price, energy stocks, natural gas</td>
-      <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>20.264282</td>
-      <td>42.336516</td>
-      <td>78.687305</td>
+      <td>not_used</td>
+      <td>0.008739</td>
+      <td>0.027917</td>
+      <td>0.122978</td>
+      <td>0.227909</td>
       <td>0.0</td>
-      <td>44.412859</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Fundamental sleeper</td>
-      <td>70.0</td>
-      <td>87.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Avoid</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.423264</td>
-      <td>0.004230</td>
-      <td>trained</td>
-      <td>15.347225</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
+      <td>-0.042055</td>
+      <td>0.063562</td>
+      <td>0.122491</td>
+      <td>0.401340</td>
+      <td>-0.123704</td>
+      <td>0.034157</td>
+      <td>25.948408</td>
+      <td>NaN</td>
+      <td>0.649253</td>
+      <td>1.71</td>
+      <td>NaN</td>
+      <td>NaN</td>
     </tr>
     <tr>
+      <td>3</td>
+      <td>2026-07-01</td>
+      <td>Utilities</td>
+      <td>XLU</td>
+      <td>59.6%</td>
+      <td>19.146730</td>
+      <td>High outperformance probability</td>
+      <td>trained</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>High outperformance probability. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
+      <td>0.041879</td>
+      <td>-0.021464</td>
+      <td>0.047713</td>
+      <td>0.145009</td>
+      <td>0.0</td>
+      <td>-0.059187</td>
+      <td>0.004877</td>
+      <td>-0.148021</td>
+      <td>0.548164</td>
+      <td>-0.173085</td>
+      <td>-0.041107</td>
+      <td>20.664726</td>
+      <td>NaN</td>
+      <td>0.701750</td>
+      <td>2.68</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>2026-07-01</td>
       <td>Communication Services</td>
       <td>XLC</td>
+      <td>54.1%</td>
+      <td>8.266856</td>
+      <td>Unclear model signal</td>
+      <td>trained</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>Unclear model signal. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
       <td>-0.047531</td>
       <td>-0.006720</td>
       <td>-0.065951</td>
@@ -2085,204 +211,294 @@
       <td>-0.043493</td>
       <td>-0.032787</td>
       <td>0.676275</td>
+      <td>-0.158341</td>
+      <td>-0.154772</td>
       <td>16.751333</td>
       <td>NaN</td>
       <td>NaN</td>
       <td>1.21</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>False</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td></td>
-      <td>-0.158341</td>
-      <td>-0.154772</td>
-      <td>NaN</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>0</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td></td>
-      <td>not_used</td>
-      <td>auto</td>
-      <td><NA></td>
-      <td>disabled_by_mode</td>
-      <td>Google Trends disabled in market/fundamental mode</td>
-      <td>communication services stocks, streaming media, digital advertising</td>
+    </tr>
+    <tr>
+      <td>5</td>
       <td>2026-07-01</td>
-      <td>db</td>
-      <td>research</td>
-      <td>market_fundamental</td>
-      <td>market_fundamental_only</td>
-      <td>15.755230</td>
-      <td>58.252982</td>
-      <td>64.568345</td>
-      <td>0.0</td>
-      <td>43.148490</td>
-      <td>Trend data not used in market/fundamental mode</td>
-      <td>Weak setup</td>
-      <td>35.0</td>
-      <td>85.0</td>
-      <td>Market/fundamental research signal</td>
-      <td>Research only</td>
-      <td>Avoid</td>
-      <td>Market/fundamental-only mode: Google Trends not used.</td>
-      <td>0.541334</td>
-      <td>-0.005405</td>
-      <td>trained</td>
-      <td>8.266856</td>
-      <td>RandomForestClassifier</td>
-      <td>Ridge</td>
-      <td>market_fundamental</td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
-
-  <h2>AI Model</h2>
-  <p>The ML model predicts historical sector outperformance probabilities versus SPY and expected 4-week excess return based on engineered features. It does not guarantee future performance and remains subject to data-quality gates and human analyst review.</p>
-  <p><strong>Model status:</strong> trained</p>
-
-  <h3>Current ML Research Signals</h3>
-  <table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>sector</th>
-      <th>ticker</th>
-      <th>total_score</th>
-      <th>ml_feature_set</th>
-      <th>ml_predicted_outperform_probability</th>
-      <th>ml_predicted_excess_return_4w</th>
-      <th>ml_model_status</th>
-      <th>ml_model_confidence</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Utilities</td>
-      <td>XLU</td>
-      <td>61.133036</td>
-      <td>market_fundamental</td>
-      <td>0.595734</td>
-      <td>-0.005741</td>
-      <td>trained</td>
-      <td>19.146730</td>
-    </tr>
-    <tr>
       <td>Financials</td>
       <td>XLF</td>
-      <td>60.495882</td>
-      <td>market_fundamental</td>
-      <td>0.518104</td>
-      <td>-0.004703</td>
-      <td>trained</td>
+      <td>51.8%</td>
       <td>3.620844</td>
+      <td>Unclear model signal</td>
+      <td>trained</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>Unclear model signal. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
+      <td>0.069123</td>
+      <td>0.113733</td>
+      <td>-0.006056</td>
+      <td>0.164617</td>
+      <td>0.0</td>
+      <td>-0.025089</td>
+      <td>0.046078</td>
+      <td>0.690897</td>
+      <td>0.450492</td>
+      <td>-0.037888</td>
+      <td>-0.094876</td>
+      <td>17.346087</td>
+      <td>NaN</td>
+      <td>1.616251</td>
+      <td>1.54</td>
+      <td>NaN</td>
+      <td>NaN</td>
     </tr>
     <tr>
+      <td>6</td>
+      <td>2026-07-01</td>
       <td>Healthcare</td>
       <td>XLV</td>
-      <td>59.938872</td>
-      <td>market_fundamental</td>
-      <td>0.516185</td>
-      <td>-0.004736</td>
-      <td>trained</td>
+      <td>51.6%</td>
       <td>3.236905</td>
-    </tr>
-    <tr>
-      <td>Materials</td>
-      <td>XLB</td>
-      <td>57.581257</td>
-      <td>market_fundamental</td>
-      <td>0.597970</td>
-      <td>-0.002938</td>
+      <td>Unclear model signal</td>
       <td>trained</td>
-      <td>19.594088</td>
-    </tr>
-    <tr>
-      <td>Industrials</td>
-      <td>XLI</td>
-      <td>56.091134</td>
+      <td>RandomForestClassifier</td>
       <td>market_fundamental</td>
-      <td>0.339802</td>
-      <td>-0.005395</td>
-      <td>trained</td>
-      <td>32.039646</td>
+      <td>Ready for ML inference</td>
+      <td>Unclear model signal. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
+      <td>0.079207</td>
+      <td>0.088261</td>
+      <td>0.024004</td>
+      <td>0.198087</td>
+      <td>0.0</td>
+      <td>-0.007403</td>
+      <td>0.063026</td>
+      <td>0.445570</td>
+      <td>0.406808</td>
+      <td>-0.063359</td>
+      <td>-0.064817</td>
+      <td>25.733807</td>
+      <td>NaN</td>
+      <td>1.253772</td>
+      <td>1.68</td>
+      <td>NaN</td>
+      <td>NaN</td>
     </tr>
     <tr>
-      <td>Consumer Staples</td>
-      <td>XLP</td>
-      <td>53.347362</td>
-      <td>market_fundamental</td>
-      <td>0.497732</td>
-      <td>-0.003920</td>
-      <td>trained</td>
-      <td>0.453530</td>
-    </tr>
-    <tr>
+      <td>7</td>
+      <td>2026-07-01</td>
       <td>Real Estate</td>
       <td>XLRE</td>
-      <td>52.406028</td>
-      <td>market_fundamental</td>
-      <td>0.500108</td>
-      <td>-0.001594</td>
-      <td>trained</td>
+      <td>50.0%</td>
       <td>0.021514</td>
-    </tr>
-    <tr>
-      <td>Technology</td>
-      <td>XLK</td>
-      <td>49.964305</td>
-      <td>market_fundamental</td>
-      <td>0.691894</td>
-      <td>-0.007079</td>
+      <td>Unclear model signal</td>
       <td>trained</td>
-      <td>38.378843</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>Unclear model signal. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
+      <td>0.025537</td>
+      <td>0.086823</td>
+      <td>0.092173</td>
+      <td>0.194981</td>
+      <td>0.0</td>
+      <td>-0.143505</td>
+      <td>0.048546</td>
+      <td>0.445291</td>
+      <td>0.625462</td>
+      <td>-0.064797</td>
+      <td>0.003353</td>
+      <td>32.688010</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>3.18</td>
+      <td>NaN</td>
+      <td>NaN</td>
     </tr>
     <tr>
+      <td>8</td>
+      <td>2026-07-01</td>
+      <td>Consumer Staples</td>
+      <td>XLP</td>
+      <td>49.8%</td>
+      <td>0.453530</td>
+      <td>Unclear model signal</td>
+      <td>trained</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>Unclear model signal. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
+      <td>0.013410</td>
+      <td>0.014028</td>
+      <td>0.061957</td>
+      <td>0.174855</td>
+      <td>0.0</td>
+      <td>-0.076436</td>
+      <td>0.017557</td>
+      <td>0.080225</td>
+      <td>0.384712</td>
+      <td>-0.137593</td>
+      <td>-0.026863</td>
+      <td>25.016304</td>
+      <td>NaN</td>
+      <td>1.219326</td>
+      <td>2.62</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>2026-07-01</td>
       <td>Consumer Discretionary</td>
       <td>XLY</td>
-      <td>48.339328</td>
-      <td>market_fundamental</td>
-      <td>0.450013</td>
-      <td>-0.006937</td>
-      <td>trained</td>
+      <td>45.0%</td>
       <td>9.997400</td>
+      <td>Unclear model signal</td>
+      <td>trained</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>Unclear model signal. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
+      <td>0.004315</td>
+      <td>0.089191</td>
+      <td>-0.017791</td>
+      <td>0.239329</td>
+      <td>0.0</td>
+      <td>-0.046739</td>
+      <td>0.009640</td>
+      <td>0.372669</td>
+      <td>0.483354</td>
+      <td>-0.062430</td>
+      <td>-0.106611</td>
+      <td>29.579721</td>
+      <td>NaN</td>
+      <td>0.706590</td>
+      <td>0.74</td>
+      <td>NaN</td>
+      <td>NaN</td>
     </tr>
     <tr>
+      <td>10</td>
+      <td>2026-07-01</td>
       <td>Energy</td>
       <td>XLE</td>
-      <td>44.412859</td>
-      <td>market_fundamental</td>
-      <td>0.423264</td>
-      <td>0.004230</td>
-      <td>trained</td>
+      <td>42.3%</td>
       <td>15.347225</td>
+      <td>Unclear model signal</td>
+      <td>trained</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>Unclear model signal. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
+      <td>-0.073735</td>
+      <td>-0.133611</td>
+      <td>0.189489</td>
+      <td>0.212231</td>
+      <td>0.0</td>
+      <td>-0.151614</td>
+      <td>0.034774</td>
+      <td>-0.629553</td>
+      <td>0.338381</td>
+      <td>-0.285231</td>
+      <td>0.100669</td>
+      <td>19.833510</td>
+      <td>NaN</td>
+      <td>1.018421</td>
+      <td>2.65</td>
+      <td>NaN</td>
+      <td>NaN</td>
     </tr>
     <tr>
-      <td>Communication Services</td>
-      <td>XLC</td>
-      <td>43.148490</td>
-      <td>market_fundamental</td>
-      <td>0.541334</td>
-      <td>-0.005405</td>
+      <td>11</td>
+      <td>2026-07-01</td>
+      <td>Industrials</td>
+      <td>XLI</td>
+      <td>34.0%</td>
+      <td>32.039646</td>
+      <td>Low outperformance probability</td>
       <td>trained</td>
-      <td>8.266856</td>
+      <td>RandomForestClassifier</td>
+      <td>market_fundamental</td>
+      <td>Ready for ML inference</td>
+      <td>Low outperformance probability. Current model ranking is based on market/fundamental features; Google Trends are not active.</td>
+      <td>2026-07-01</td>
+      <td>db</td>
+      <td>not_used</td>
+      <td>auto</td>
+      <td>disabled_by_mode</td>
+      <td>Google Trends disabled in market/fundamental mode</td>
+      <td>not_used</td>
+      <td>0.075957</td>
+      <td>0.146942</td>
+      <td>0.182476</td>
+      <td>0.237923</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>0.128452</td>
+      <td>0.617606</td>
+      <td>0.415685</td>
+      <td>-0.004678</td>
+      <td>0.093656</td>
+      <td>32.213478</td>
+      <td>NaN</td>
+      <td>1.885457</td>
+      <td>1.18</td>
+      <td>NaN</td>
+      <td>NaN</td>
     </tr>
   </tbody>
 </table>
-  <h3>Model Evaluation Metrics</h3>
+
+  <h2>Data Readiness</h2>
+  <ul>
+    <li><strong>Model status:</strong> trained</li>
+    <li><strong>Google Trends not active:</strong> 11</li>
+    <li><strong>Google Trends demo inputs:</strong> 0</li>
+    <li><strong>Google Trends observed/cache/manual inputs:</strong> 0</li>
+  </ul>
+
+  <h2>Model Evaluation</h2>
+  <p>The ML model is evaluated with a time-based train/test split rather than a random split. This helps avoid look-ahead bias in the historical sector ETF setting.</p>
   <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -2293,26 +509,9 @@
       <th>recall</th>
       <th>f1</th>
       <th>roc_auc</th>
-      <th>mae</th>
-      <th>rmse</th>
-      <th>r2</th>
-      <th>directional_accuracy</th>
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td>classification</td>
-      <td>LogisticRegression</td>
-      <td>0.568993</td>
-      <td>0.494382</td>
-      <td>0.016123</td>
-      <td>0.031228</td>
-      <td>0.448328</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-    </tr>
     <tr>
       <td>classification</td>
       <td>RandomForestClassifier</td>
@@ -2321,40 +520,11 @@
       <td>0.366435</td>
       <td>0.398486</td>
       <td>0.515655</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-    </tr>
-    <tr>
-      <td>regression</td>
-      <td>Ridge</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0.033549</td>
-      <td>0.043782</td>
-      <td>-0.011813</td>
-      <td>0.529207</td>
-    </tr>
-    <tr>
-      <td>regression</td>
-      <td>RandomForestRegressor</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0.034979</td>
-      <td>0.046643</td>
-      <td>-0.148380</td>
-      <td>0.532839</td>
     </tr>
   </tbody>
 </table>
-  <h3>Feature Importance</h3>
+
+  <h2>Feature Importance</h2>
   <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -2428,250 +598,9 @@
   </tbody>
 </table>
 
-  <h2>News &amp; Social Sentiment</h2>
-  <p>Finnhub sentiment scores are external black-box scores. They are used as supporting alternative data and not as standalone investment signals.</p>
-  <p>Sentiment module disabled for this run. Add <code>FINNHUB_API_KEY=your_key_here</code> to <code>config/.env</code> or set it in PowerShell, then run <code>python src/pipeline.py --mode full --use-sentiment</code> to enable it.</p>
-  <table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>sector</th>
-      <th>sentiment_data_status</th>
-      <th>sentiment_provider</th>
-      <th>sentiment_score_component</th>
-      <th>sentiment_bullish_percent</th>
-      <th>sentiment_bearish_percent</th>
-      <th>sentiment_article_count</th>
-      <th>sentiment_buzz</th>
-      <th>sentiment_coverage_count</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Utilities</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Financials</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Healthcare</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Materials</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Industrials</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Consumer Staples</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Real Estate</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Technology</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Consumer Discretionary</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Energy</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Communication Services</td>
-      <td>not_used</td>
-      <td>disabled_by_mode</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>0</td>
-      <td>NaN</td>
-      <td>0</td>
-    </tr>
-  </tbody>
-</table>
+  <h2>Interpretation</h2>
+  <p>The model output is a research signal, not a buy/sell instruction. Google Trends may be used only as an optional feature source when reliable data is available; the current stable model can run on market/fundamental features alone.</p>
 
-  <h2>Methodology</h2>
-  <p>The score blends Google Trends attention, relative momentum, fundamentals, and risk controls. Trend data is treated as the main signal, while market and fundamental signals act as validation and risk filters.</p>
-  <p><em>Demo trend data is used only when Google Trends live access is unavailable, to keep the prototype demonstrable. It is clearly flagged and must not be interpreted as real market attention.</em></p>
-
-  <h2>How Analysts Should Interpret the Output</h2>
-  <ul>
-    <li><strong>Research Candidate:</strong> candidate for deeper analyst review; not an automatic action.</li>
-    <li><strong>Watch:</strong> monitor closely, but no automatic action.</li>
-    <li><strong>Neutral:</strong> keep under observation or benchmark-level exposure.</li>
-    <li><strong>Avoid:</strong> deprioritize unless supported by external analyst conviction.</li>
-    <li><strong>Research Prototype:</strong> demo/prototype-only signal.</li>
-    <li><strong>Insufficient Data:</strong> not enough usable input data.</li>
-  </ul>
-
-  <h2>Data Quality Interpretation</h2>
-  <ul>
-    <li><strong>manual_csv:</strong> real Google Trends data exported manually from the Google Trends website.</li>
-    <li><strong>live_pytrends:</strong> real Google Trends data from the current pytrends request.</li>
-    <li><strong>external_api:</strong> real Google Trends-like data from a configured external provider.</li>
-    <li><strong>live:</strong> legacy label for real Google Trends data from the current API request.</li>
-    <li><strong>cache:</strong> previously loaded Google Trends data.</li>
-    <li><strong>demo:</strong> synthetic prototype data used when live Google Trends is unavailable.</li>
-    <li><strong>fallback:</strong> neutral placeholder and weakest data quality.</li>
-  </ul>
   <p>Dashboard command: <code>python -m streamlit run app/app.py</code></p>
-
-  <h2>Data Status</h2>
-  <ul>
-    <li>Manual CSV Google Trends sectors: 0</li>
-    <li>Live pytrends sectors: 0</li>
-    <li>External API sectors: 0</li>
-    <li>Legacy live Google Trends data sectors: 0</li>
-    <li>Cache-backed sectors: 0</li>
-    <li>Demo sectors: 0</li>
-    <li>Trend not used sectors: 11</li>
-    <li>Fallback sectors: 0</li>
-    <li>Live sectors: none</li>
-    <li>Cache sectors: none</li>
-    <li>Demo sectors: none</li>
-    <li>Fallback sectors: none</li>
-  </ul>
-
-  <h2>Backtest</h2>
-  <p>This is a market-only historical backtest. Google Trends validation requires stable historical trend data and is not yet fully implemented.</p>
-  <table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>strategy</th>
-      <th>cumulative_return</th>
-      <th>annualized_return</th>
-      <th>annualized_volatility</th>
-      <th>sharpe_ratio</th>
-      <th>max_drawdown</th>
-      <th>win_rate</th>
-      <th>number_of_rebalances</th>
-      <th>turnover</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Monthly top sectors</td>
-      <td>1.579474</td>
-      <td>0.127153</td>
-      <td>0.159668</td>
-      <td>0.796358</td>
-      <td>-0.161900</td>
-      <td>0.621053</td>
-      <td>95</td>
-      <td>0.421986</td>
-    </tr>
-    <tr>
-      <td>Equal-weight sectors</td>
-      <td>1.499732</td>
-      <td>0.122691</td>
-      <td>0.160784</td>
-      <td>0.763082</td>
-      <td>-0.231668</td>
-      <td>0.652632</td>
-      <td>95</td>
-      <td>NaN</td>
-    </tr>
-    <tr>
-      <td>SPY benchmark</td>
-      <td>1.948089</td>
-      <td>0.146332</td>
-      <td>0.168063</td>
-      <td>0.870695</td>
-      <td>-0.239272</td>
-      <td>0.663158</td>
-      <td>95</td>
-      <td>NaN</td>
-    </tr>
-  </tbody>
-</table>
-  <p>Run: <code>python src/backtesting.py</code></p>
-
-  <h2>Risks & Limitations</h2>
-  <ul>
-    <li>No real trading or order logic is implemented.</li>
-    <li>Google Trends data can be delayed or incomplete.</li>
-    <li>Fundamentals may be sparse for ETFs.</li>
-    <li>Decision support only. Human review remains essential.</li>
-  </ul>
 </body>
 </html>

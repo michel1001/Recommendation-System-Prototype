@@ -1,4 +1,4 @@
-"""Market-only monthly sector-rotation backtest with no look-ahead bias."""
+"""Market-feature monthly sector-rotation diagnostic with no look-ahead bias."""
 
 from __future__ import annotations
 
@@ -14,7 +14,14 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.config import BACKTEST_METRICS_PATH, BACKTEST_RESULTS_PATH, SECTOR_ETFS, ensure_directories
-from src.scoring import minmax_score
+
+def relative_rank_value(series: pd.Series | list[float], higher_is_better: bool = True) -> pd.Series:
+    values = pd.to_numeric(pd.Series(series), errors="coerce")
+    valid = values.dropna()
+    if valid.empty or valid.max() == valid.min():
+        return pd.Series(0.5, index=values.index)
+    ranked = (values - valid.min()) / (valid.max() - valid.min())
+    return ranked if higher_is_better else 1 - ranked
 
 
 def load_backtest_prices(tickers: list[str], start: str = "2018-01-01") -> pd.DataFrame:
@@ -46,13 +53,13 @@ def calculate_historical_features(prices: pd.DataFrame, as_of_date: pd.Timestamp
 
 
 def rank_sectors_historically(features: pd.DataFrame) -> pd.DataFrame:
-    """Rank market-only features relative to the available sector universe."""
+    """Create a market-feature diagnostic rank for historical validation."""
     ranked = features.copy()
     if ranked.empty:
         return ranked
-    components = [minmax_score(ranked[column], higher) for column, higher in [("momentum_21", True), ("momentum_63", True), ("momentum_126", True), ("volatility", False), ("drawdown", True), ("risk_adjusted_return", True)]]
-    ranked["market_score"] = pd.concat(components, axis=1).mean(axis=1)
-    return ranked.sort_values("market_score", ascending=False).reset_index(drop=True)
+    components = [relative_rank_value(ranked[column], higher) for column, higher in [("momentum_21", True), ("momentum_63", True), ("momentum_126", True), ("volatility", False), ("drawdown", True), ("risk_adjusted_return", True)]]
+    ranked["market_feature_rank_value"] = pd.concat(components, axis=1).mean(axis=1)
+    return ranked.sort_values("market_feature_rank_value", ascending=False).reset_index(drop=True)
 
 
 def calculate_performance_metrics(returns: pd.Series) -> dict[str, float]:

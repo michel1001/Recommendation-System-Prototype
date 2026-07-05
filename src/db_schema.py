@@ -107,26 +107,19 @@ SCHEMA_STATEMENTS = [
     )
     """,
     """
-    CREATE TABLE IF NOT EXISTS recommendation_scores (
+    CREATE TABLE IF NOT EXISTS ml_sector_rankings (
         run_id TEXT,
         run_timestamp TEXT,
         operating_mode TEXT,
-        scoring_profile TEXT,
+        rank INTEGER,
+        date TEXT,
         sector TEXT,
         ticker TEXT,
-        total_score REAL,
-        trend_score REAL,
-        momentum_score REAL,
-        risk_score REAL,
-        fundamental_score REAL,
-        sentiment_score_component REAL,
-        synergy_score REAL,
-        recommendation TEXT,
-        data_quality_status TEXT,
-        actionability_status TEXT,
         ml_model_status TEXT,
         ml_predicted_outperform_probability REAL,
-        ml_predicted_excess_return_4w REAL,
+        ml_model_confidence REAL,
+        ml_signal_label TEXT,
+        data_readiness_status TEXT,
         PRIMARY KEY (run_id, sector)
     )
     """,

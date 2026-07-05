@@ -14,7 +14,7 @@ if str(PROJECT_ROOT) not in sys.path: sys.path.insert(0, str(PROJECT_ROOT))
 
 import numpy as np
 
-from src.config import ALLOWED_OPERATING_MODES, DEFAULT_MARKET_PERIOD, DISCLAIMER, OPERATING_MODE, RANKING_PATH, SCORING_MODE, SCORING_PROFILE_BY_MODE, SECTOR_REPRESENTATIVE_TICKERS, SENTIMENT_ENABLED, TREND_KEYWORDS, TREND_REFRESH_MODE, ensure_directories
+from src.config import ALLOWED_OPERATING_MODES, DEFAULT_MARKET_PERIOD, DISCLAIMER, OPERATING_MODE, RANKING_PATH, SECTOR_REPRESENTATIVE_TICKERS, SENTIMENT_ENABLED, TREND_KEYWORDS, TREND_REFRESH_MODE, ensure_directories
 from src.data_loader import get_sector_etfs, load_fundamentals, load_market_data
 from src.database import get_database_path, table_exists
 from src.db_loader import (
@@ -27,39 +27,84 @@ from src.db_loader import (
     save_market_indicators,
     save_market_prices,
     save_pipeline_run,
-    save_recommendation_scores,
+    save_ml_sector_rankings,
     save_trend_features,
     upsert_sectors,
 )
 from src.db_schema import create_database_schema
+from src.features import assess_data_readiness, collect_latest_features, ml_explanation, ml_signal_label
 from src.indicators import enrich_market_indicators
 from src.ml_model import load_model, predict_current_signals
 from src.preprocessing import clean_market_data
 from src.report_generator import generate_html_report, save_report_csv
-from src.scoring import calculate_relative_scores, collect_latest_features
 from src.sentiment_provider import aggregate_sector_sentiment, sentiment_not_used_features
 from src.trends_loader import ALLOWED_TREND_REFRESH_MODES, calculate_trend_features, get_trends_with_cache_or_demo
 
 
-def _add_ml_outputs(ranking: pd.DataFrame, use_ml: bool = False) -> pd.DataFrame:
-    model = load_model() if use_ml else None
-    if use_ml and model is None:
-        print("[WARN] --use-ml requested, but no trained model was found. Run python src/ml_model.py.")
-    result = predict_current_signals(ranking, model_bundle=model) if use_ml and model is not None else ranking.copy()
+def _add_ml_outputs(features: pd.DataFrame) -> pd.DataFrame:
+    model = load_model()
+    if model is None:
+        print("[WARN] No trained model was found. Run python src/ml_dataset.py and python src/ml_model.py.")
+    result = predict_current_signals(features, model_bundle=model) if model is not None else features.copy()
     if "ml_model_status" not in result:
         result["ml_predicted_outperform_probability"] = pd.NA
-        result["ml_predicted_excess_return_4w"] = pd.NA
         result["ml_model_status"] = "not_trained"
         result["ml_model_confidence"] = 0.0
     if "ml_classifier_model" not in result:
         result["ml_classifier_model"] = ""
-    if "ml_regression_model" not in result:
-        result["ml_regression_model"] = ""
     if "ml_feature_set" not in result:
         result["ml_feature_set"] = ""
     if "ml_feature_mismatch_detail" not in result:
         result["ml_feature_mismatch_detail"] = ""
     return result
+
+
+def _finalize_ml_ranking(features: pd.DataFrame) -> pd.DataFrame:
+    ranking = _add_ml_outputs(features)
+    ranking["data_readiness_status"] = ranking.apply(assess_data_readiness, axis=1)
+    ranking["ml_signal_label"] = ranking["ml_predicted_outperform_probability"].map(ml_signal_label)
+    ranking["short_explanation"] = ranking.apply(ml_explanation, axis=1)
+    ranking = ranking.sort_values("ml_predicted_outperform_probability", ascending=False, na_position="last").reset_index(drop=True)
+    ranking.insert(0, "rank", range(1, len(ranking) + 1))
+    output_columns = [
+        "rank",
+        "date",
+        "sector",
+        "ticker",
+        "ml_predicted_outperform_probability",
+        "ml_model_confidence",
+        "ml_signal_label",
+        "ml_model_status",
+        "ml_classifier_model",
+        "ml_feature_set",
+        "data_readiness_status",
+        "short_explanation",
+        "market_last_date",
+        "price_data_status",
+        "trend_data_status",
+        "trend_refresh_mode",
+        "trend_provider",
+        "trend_source_detail",
+        "sentiment_data_status",
+        "momentum_21",
+        "momentum_63",
+        "momentum_126",
+        "volatility_20",
+        "downside_volatility_20",
+        "drawdown_current",
+        "distance_to_ma_200",
+        "risk_adjusted_return_63",
+        "volume_momentum_20",
+        "relative_strength_vs_spy_63",
+        "relative_strength_vs_spy_126",
+        "trailingPE",
+        "forwardPE",
+        "priceToBook",
+        "dividendYield",
+        "beta",
+        "marketCap",
+    ]
+    return ranking[[column for column in output_columns if column in ranking.columns]]
 
 
 def _trend_not_used_features() -> dict:
@@ -118,8 +163,8 @@ def _trend_features_from_db(sector: str) -> tuple[dict, str, dict]:
     return features, "missing_from_db", {"trend_refresh_mode": "db", "trend_cache_age_hours": pd.NA, "trend_provider": "sqlite", "trend_source_detail": "No Google Trends data found in DB. Import manual CSVs with src/import_trends_csv.py."}
 
 
-def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_REFRESH_MODE, use_ml: bool = False, operating_mode: str = OPERATING_MODE, use_sentiment: bool | None = None, data_source: str = "db", save_to_db: bool = False) -> pd.DataFrame:
-    """Build the ranking, HTML report, and dashboard input CSV without trading."""
+def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_REFRESH_MODE, use_ml: bool = True, operating_mode: str = OPERATING_MODE, use_sentiment: bool | None = None, data_source: str = "db", save_to_db: bool = False) -> pd.DataFrame:
+    """Build the ML ranking, HTML report, and dashboard input CSV without trading."""
     ensure_directories()
     rows, statuses = [], {}
     if operating_mode not in ALLOWED_OPERATING_MODES:
@@ -129,7 +174,6 @@ def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_RE
     use_trends = operating_mode in {"full", "demo"}
     sentiment_enabled = operating_mode == "full" and (SENTIMENT_ENABLED if use_sentiment is None else use_sentiment)
     print(DISCLAIMER)
-    print(f"Scoring mode: {SCORING_MODE}")
     print(f"Operating mode: {operating_mode}")
     print(f"Trend refresh mode: {trend_mode}")
     print(f"Data source: {data_source}")
@@ -207,13 +251,11 @@ def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_RE
             "trend_keywords": ", ".join(TREND_KEYWORDS[sector]),
             "market_last_date": market_last_date,
             "price_data_status": data_source if not market.empty else "missing",
-            "scoring_mode": SCORING_MODE,
             "operating_mode": operating_mode,
-            "scoring_profile": SCORING_PROFILE_BY_MODE[operating_mode],
+            "date": market_last_date,
         })
         rows.append(row)
-    ranking = calculate_relative_scores(pd.DataFrame(rows), operating_mode=operating_mode).sort_values("total_score", ascending=False).reset_index(drop=True)
-    ranking = _add_ml_outputs(ranking, use_ml=use_ml)
+    ranking = _finalize_ml_ranking(pd.DataFrame(rows))
     ranking.to_csv(RANKING_PATH, index=False)
     save_report_csv(ranking)
     html_path = generate_html_report(ranking)
@@ -221,17 +263,17 @@ def run_pipeline(period: str = DEFAULT_MARKET_PERIOD, trend_mode: str = TREND_RE
         create_database_schema()
         run_timestamp = datetime.now(timezone.utc).isoformat()
         run_id = f"run-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
-        save_recommendation_scores(ranking, run_id, run_timestamp)
+        save_ml_sector_rankings(ranking, run_id, run_timestamp)
         save_pipeline_run(run_id, {"run_timestamp": run_timestamp, "operating_mode": operating_mode, "trend_mode": trend_mode, "use_ml": use_ml, "use_sentiment": sentiment_enabled, "status": "completed", "notes": f"data_source={data_source}"})
-    print("[OK] Scores calculated")
+    print("[OK] ML outperformance probabilities calculated")
     print(f"[OK] CSV exported: {RANKING_PATH.relative_to(PROJECT_ROOT)}")
     print(f"[OK] HTML report exported: {html_path.relative_to(PROJECT_ROOT)}")
     print("[OK] Dashboard entrypoint available: python -m streamlit run app/app.py")
     print("Data status counts: " + ", ".join(f"{key}={len(value)}" for key, value in sorted(statuses.items())))
     print("Sentiment status counts: " + ", ".join(f"{key}={len(value)}" for key, value in sorted(sentiment_statuses.items())))
     print("Top 5 sectors:")
-    print(ranking[["sector", "ticker", "total_score", "recommendation", "synergy_label"]].head().to_string(index=False))
-    print("Management summary: Scores combine investor-attention signals with market, risk, and fundamental validation for analyst review.")
+    print(ranking[["rank", "sector", "ticker", "ml_predicted_outperform_probability", "ml_signal_label"]].head().to_string(index=False))
+    print("Management summary: Ranking is derived only from the supervised ML outperformance probability versus SPY.")
     print("Dashboard command: python -m streamlit run app/app.py")
     return ranking
 
@@ -242,12 +284,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trend-mode", choices=sorted(ALLOWED_TREND_REFRESH_MODES), default=TREND_REFRESH_MODE, help="Google Trends refresh strategy.")
     parser.add_argument("--skip-live-trends", action="store_true", help="Equivalent to --trend-mode cache_only.")
     parser.add_argument("--period", default=DEFAULT_MARKET_PERIOD, help="Market-data period passed to yfinance.")
-    parser.add_argument("--use-ml", action="store_true", help="Add current ML predictions if a trained model exists.")
-    parser.add_argument("--no-ml", action="store_true", help="Disable ML predictions and mark outputs as not_trained.")
+    parser.add_argument("--use-ml", action="store_true", help="Deprecated: ML is always used for the final ranking.")
+    parser.add_argument("--no-ml", action="store_true", help="Deprecated: retained for CLI compatibility; final ranking still expects an ML model.")
     parser.add_argument("--use-sentiment", action="store_true", help="Enable optional Finnhub news/social sentiment in full mode.")
     parser.add_argument("--no-sentiment", action="store_true", help="Disable optional news/social sentiment.")
     parser.add_argument("--data-source", choices=["db", "live"], default="db", help="Read input data from SQLite or live yfinance/providers.")
-    parser.add_argument("--save-to-db", action="store_true", help="When using --data-source live, also save loaded market/fundamental data and scores to SQLite.")
+    parser.add_argument("--save-to-db", action="store_true", help="When using --data-source live, also save loaded market/fundamental data and ML ranking to SQLite.")
     return parser.parse_args()
 
 
@@ -255,4 +297,4 @@ if __name__ == "__main__":
     args = parse_args()
     selected_trend_mode = "cache_only" if args.skip_live_trends else args.trend_mode
     selected_sentiment = True if args.use_sentiment else False if args.no_sentiment else None
-    run_pipeline(period=args.period, trend_mode=selected_trend_mode, use_ml=args.use_ml and not args.no_ml, operating_mode=args.mode, use_sentiment=selected_sentiment, data_source=args.data_source, save_to_db=args.save_to_db)
+    run_pipeline(period=args.period, trend_mode=selected_trend_mode, use_ml=True, operating_mode=args.mode, use_sentiment=selected_sentiment, data_source=args.data_source, save_to_db=args.save_to_db)

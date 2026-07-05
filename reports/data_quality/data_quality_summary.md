@@ -2,7 +2,7 @@
 
 ## 1. Database Overview
 - Database path: `C:\Users\miche\Recommendation-System-Prototype\data\database\sector_monitoring.db`
-- Generated timestamp: 2026-07-01 18:54:56
+- Generated timestamp: 2026-07-04 13:22:14
 
 | table_name | row_count | status |
 | --- | --- | --- |
@@ -12,8 +12,8 @@
 | fundamentals | 11 | OK |
 | google_trends | 0 | EMPTY |
 | trend_features | 0 | EMPTY |
-| recommendation_scores | 21 | OK |
-| pipeline_runs | 2 | OK |
+| ml_sector_rankings | 11 | OK |
+| pipeline_runs | 4 | OK |
 
 ## 2. Sector Coverage
 - Expected sector count: 11
@@ -106,22 +106,19 @@ Google Trends data is optional in market/fundamental mode. If raw trends are mis
 | Consumer Staples | False | 0 | 0 |  |  | False | 0 |  | NOT_USED |
 | Communication Services | False | 0 | 0 |  |  | False | 0 |  | NOT_USED |
 
-## 7. Recommendation Output Quality
-- Latest run id: run-20260701160825-d5a38343
-- Latest run timestamp: 2026-07-01T16:08:25.628448+00:00
+## 7. ML Ranking Output Quality
+- Latest run id: run-20260704112156-a1be07af
+- Latest run timestamp: 2026-07-04T11:21:56.816857+00:00
 - Number of sectors in latest run: 11
-- Operating mode: market_fundamental
-- Scoring profile: market_fundamental_only
-- Missing total_score: 0
-- Missing recommendation: 0
-- Missing data_quality_status: 0
-- Missing actionability_status: 0
-- Missing ML predictions: 0
+- Operating mode: 
+- Missing ML probability: 0
+- Missing model confidence: 0
+- Missing data readiness status: 0
 - Status: OK
 
 ## 8. Pipeline Run History
-- Number of runs: 2
-- Latest run timestamp: 2026-07-01T16:08:25.628448+00:00
+- Number of runs: 4
+- Latest run timestamp: 2026-07-04T11:21:56.816857+00:00
 - Latest operating mode: market_fundamental
 - Latest trend mode: auto
 - Latest use_ml: 1
@@ -130,7 +127,7 @@ Google Trends data is optional in market/fundamental mode. If raw trends are mis
 
 ## 9. Key Data Quality Issues
 - google_trends table is empty; import manual Google Trends CSVs for full mode.
-- trend_features table is empty; trend feature scoring cannot use DB trend inputs yet.
+- trend_features table is empty; optional trend features are not available for ML experiments yet.
 - fundamentals beta is missing for most ETFs.
 - fundamentals market_cap is missing for most ETFs.
 - ETF fundamentals are partially incomplete; this is common for yfinance ETF fields.

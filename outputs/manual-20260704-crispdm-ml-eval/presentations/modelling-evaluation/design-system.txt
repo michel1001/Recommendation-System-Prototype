@@ -1,0 +1,9 @@
+slide size: 1280x720
+background: light gray paper (#F6F7F8)
+header: teal-to-cyan band with white claim title
+type: Aptos / Arial fallback
+palette: teal #008C85, cyan #087EA4, ink #182426, muted #667677, light teal #E8F6F4, warning #DCA62A
+diagram grammar: rounded rectangles with consistent teal stroke and attached arrow connectors
+metric grammar: large numeric values with compact labels and one-line interpretation
+footer: thin gray rule, project text left, page marker right
+ban: no rule-based score language, no decorative icons that pretend to be logos

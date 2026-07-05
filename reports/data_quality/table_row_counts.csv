@@ -5,5 +5,5 @@ market_indicators,15060,OK
 fundamentals,11,OK
 google_trends,0,EMPTY
 trend_features,0,EMPTY
-recommendation_scores,21,OK
-pipeline_runs,2,OK
+ml_sector_rankings,11,OK
+pipeline_runs,4,OK

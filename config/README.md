@@ -1,7 +1,7 @@
 # Configuration
 
 ## Purpose
-This directory contains configuration files for the recommendation system.
+This directory contains configuration files for the ML sector monitoring prototype.
 
 ## Files
 - **config.py**: Main configuration file

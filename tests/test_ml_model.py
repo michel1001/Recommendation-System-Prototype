@@ -36,5 +36,5 @@ def test_model_training_and_current_predictions_on_synthetic_data():
 
     assert not metrics.empty
     assert not predictions.empty
-    assert {"ml_predicted_outperform_probability", "ml_predicted_excess_return_4w", "ml_model_status"}.issubset(scored.columns)
+    assert {"ml_predicted_outperform_probability", "ml_model_status"}.issubset(scored.columns)
     assert scored["ml_model_status"].eq("trained_demo_trends").all()

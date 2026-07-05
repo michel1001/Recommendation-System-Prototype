@@ -12,4 +12,4 @@ This module handles data collection, validation, and preprocessing for the recom
 - Fetch historical stock prices and technical indicators
 - Retrieve company fundamental indicators (EPS, debt ratios, etc.)
 - Handle missing values and data inconsistencies
-- Prepare data for model training and scoring
+- Prepare data for model training and ML inference

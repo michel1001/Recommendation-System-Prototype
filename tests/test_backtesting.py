@@ -26,7 +26,7 @@ def test_historical_features_do_not_use_future_data():
 def test_ranking_and_backtest_structure():
     prices = synthetic_prices()
     ranked = rank_sectors_historically(calculate_historical_features(prices, prices.index[300]))
-    assert not ranked.empty and "market_score" in ranked
+    assert not ranked.empty and "market_feature_rank_value" in ranked
     results = run_monthly_rotation_backtest(top_n=2, start="2020-01-01", prices=prices, benchmark_prices=prices["AAA"])
     assert {"results", "metrics"}.issubset(results)
     assert {"portfolio_return", "spy_return"}.issubset(results["results"].columns)

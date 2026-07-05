@@ -2,8 +2,6 @@ from datetime import datetime, timedelta, timezone
 import json
 
 import pandas as pd
-
-from src.scoring import calculate_relative_scores
 from src import trends_loader
 from src.trends_loader import calculate_trend_features, generate_demo_trends
 
@@ -21,12 +19,9 @@ def test_demo_trend_features_have_observations():
     assert features["trend_last_date"]
 
 
-def test_demo_data_produces_non_neutral_trend_scores():
-    rows = []
-    for sector in ("Technology", "Energy", "Utilities"):
-        rows.append({"sector": sector, "ticker": sector[:3], "trend_data_status": "demo", **calculate_trend_features(generate_demo_trends(sector))})
-    scores = calculate_relative_scores(pd.DataFrame(rows))["trend_score"]
-    assert (scores != 50).any()
+def test_demo_data_produces_ml_trend_feature_columns():
+    features = calculate_trend_features(generate_demo_trends("Technology"))
+    assert {"trend_z_score_12w", "trend_z_score_52w", "trend_momentum_4w", "trend_percentile_52w"}.issubset(features)
 
 
 def test_cache_freshness_and_age_use_metadata(tmp_path, monkeypatch):

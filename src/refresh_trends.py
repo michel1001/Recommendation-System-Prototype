@@ -1,4 +1,4 @@
-"""Refresh Google Trends cache without running scoring or reports."""
+"""Refresh Google Trends cache without running the ML ranking pipeline or reports."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ def refresh_sector(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Refresh Google Trends cache only; does not run scoring, dashboard, or report generation.")
+    parser = argparse.ArgumentParser(description="Refresh Google Trends cache only; does not run ML ranking, dashboard, or report generation.")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sector", choices=sorted(TREND_KEYWORDS), help="Single sector to refresh.")
     group.add_argument("--all", action="store_true", help="Refresh all configured sectors.")

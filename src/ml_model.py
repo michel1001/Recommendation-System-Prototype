@@ -1,4 +1,4 @@
-"""Train and use supervised ML models for sector outperformance research."""
+"""Train and use the supervised ML model for sector outperformance research."""
 
 from __future__ import annotations
 
@@ -10,13 +10,11 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, mean_squared_error, precision_score, r2_score, recall_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -27,7 +25,6 @@ from src.ml_dataset import MARKET_FEATURE_COLUMNS, SENTIMENT_FEATURE_COLUMNS, TR
 
 
 TARGET_CLASSIFICATION = "target_outperform_spy_4w"
-TARGET_REGRESSION = "target_excess_return_4w"
 DEFAULT_FEATURE_COLUMNS = MARKET_FEATURE_COLUMNS + TREND_FEATURE_COLUMNS + SENTIMENT_FEATURE_COLUMNS
 NON_FEATURE_COLUMNS = {
     "date",
@@ -39,7 +36,7 @@ NON_FEATURE_COLUMNS = {
     "sector_forward_return_4w",
     "spy_forward_return_4w",
     TARGET_CLASSIFICATION,
-    TARGET_REGRESSION,
+    "target_excess_return_4w",
 }
 
 
@@ -86,26 +83,12 @@ def _predict_probability(model, X: pd.DataFrame) -> np.ndarray:
     return np.asarray(model.predict(X), dtype=float)
 
 
-def _regression_metrics(y_true: pd.Series, predictions: np.ndarray) -> dict[str, float]:
-    rmse = float(np.sqrt(mean_squared_error(y_true, predictions)))
-    directional_accuracy = float((np.sign(y_true) == np.sign(predictions)).mean())
-    return {
-        "mae": float(mean_absolute_error(y_true, predictions)),
-        "rmse": rmse,
-        "r2": float(r2_score(y_true, predictions)) if len(y_true) > 1 else np.nan,
-        "directional_accuracy": directional_accuracy,
-    }
-
-
 def train_classification_models(df: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     feature_columns = select_feature_columns(df)
     train, test = time_based_train_test_split(df)
     X_train, y_train = train[feature_columns], train[TARGET_CLASSIFICATION]
     X_test, y_test = test[feature_columns], test[TARGET_CLASSIFICATION]
-    models = {
-        "LogisticRegression": Pipeline([("imputer", SimpleImputer()), ("scaler", StandardScaler()), ("model", LogisticRegression(max_iter=1000))]),
-        "RandomForestClassifier": Pipeline([("imputer", SimpleImputer()), ("model", RandomForestClassifier(n_estimators=120, min_samples_leaf=5, random_state=42))]),
-    }
+    models = {"RandomForestClassifier": Pipeline([("imputer", SimpleImputer()), ("model", RandomForestClassifier(n_estimators=120, min_samples_leaf=5, random_state=42))])}
     if y_train.nunique() < 2:
         models = {"DummyClassifier": Pipeline([("imputer", SimpleImputer()), ("model", DummyClassifier(strategy="most_frequent"))])}
     rows = []
@@ -119,39 +102,16 @@ def train_classification_models(df: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     return fitted, pd.DataFrame(rows)
 
 
-def train_regression_models(df: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
-    feature_columns = select_feature_columns(df)
-    train, test = time_based_train_test_split(df)
-    X_train, y_train = train[feature_columns], train[TARGET_REGRESSION]
-    X_test, y_test = test[feature_columns], test[TARGET_REGRESSION]
-    models = {
-        "Ridge": Pipeline([("imputer", SimpleImputer()), ("scaler", StandardScaler()), ("model", Ridge(alpha=1.0))]),
-        "RandomForestRegressor": Pipeline([("imputer", SimpleImputer()), ("model", RandomForestRegressor(n_estimators=120, min_samples_leaf=5, random_state=42))]),
-    }
-    rows = []
-    fitted = {}
-    for name, model in models.items():
-        model.fit(X_train, y_train)
-        predictions = model.predict(X_test)
-        rows.append({"task": "regression", "model": name, **_regression_metrics(y_test, predictions)})
-        fitted[name] = model
-    return fitted, pd.DataFrame(rows)
-
-
 def evaluate_models(df: pd.DataFrame) -> tuple[dict, pd.DataFrame, pd.DataFrame]:
     feature_columns = select_feature_columns(df)
     classifiers, classification_metrics = train_classification_models(df)
-    regressors, regression_metrics = train_regression_models(df)
-    if classification_metrics.empty or regression_metrics.empty:
+    if classification_metrics.empty:
         raise ValueError("Not enough data variation to train ML models.")
 
     best_classifier_name = classification_metrics.sort_values(["f1", "accuracy"], ascending=False).iloc[0]["model"]
-    best_regressor_name = regression_metrics.sort_values("rmse", ascending=True).iloc[0]["model"]
     bundle = {
         "classifier": classifiers[best_classifier_name],
-        "regressor": regressors[best_regressor_name],
         "classifier_name": best_classifier_name,
-        "regressor_name": best_regressor_name,
         "feature_columns": feature_columns,
         "feature_set": str(df["feature_set"].dropna().iloc[0]) if "feature_set" in df.columns and df["feature_set"].notna().any() else "market_fundamental",
         "trained_on_demo_trends": bool(df.get("trend_data_status", pd.Series(dtype=str)).astype(str).str.lower().eq("demo").any()),
@@ -164,15 +124,12 @@ def evaluate_models(df: pd.DataFrame) -> tuple[dict, pd.DataFrame, pd.DataFrame]
 
     test = time_based_train_test_split(df)[1].copy()
     probabilities = _predict_probability(bundle["classifier"], test[feature_columns])
-    excess_return = bundle["regressor"].predict(test[feature_columns])
-    keep_columns = ["date", "sector", "ticker", TARGET_CLASSIFICATION, TARGET_REGRESSION, "trend_data_status", "ml_data_quality", "feature_set"]
+    keep_columns = ["date", "sector", "ticker", TARGET_CLASSIFICATION, "target_excess_return_4w", "trend_data_status", "ml_data_quality", "feature_set"]
     predictions = test[[column for column in keep_columns if column in test.columns]].copy()
     predictions["ml_predicted_outperform_probability"] = probabilities
-    predictions["ml_predicted_excess_return_4w"] = excess_return
     predictions["ml_model_status"] = "trained"
     predictions["ml_model_confidence"] = (np.abs(probabilities - 0.5) * 2 * 100).clip(0, 100)
-    metrics = pd.concat([classification_metrics, regression_metrics], ignore_index=True)
-    return bundle, metrics, predictions
+    return bundle, classification_metrics, predictions
 
 
 def save_best_model(bundle: dict, metrics: pd.DataFrame, predictions: pd.DataFrame, model_path=MODEL_PATH) -> object:
@@ -184,14 +141,13 @@ def save_best_model(bundle: dict, metrics: pd.DataFrame, predictions: pd.DataFra
     MODEL_METADATA_PATH.write_text(json.dumps({
         "trained_at": datetime.now().isoformat(timespec="seconds"),
         "feature_set": bundle.get("feature_set", "market_fundamental"),
-        "target": {"classification": TARGET_CLASSIFICATION, "regression": TARGET_REGRESSION},
+        "target": {"classification": TARGET_CLASSIFICATION},
         "number_of_rows": bundle.get("number_of_rows"),
         "train_start": bundle.get("train_start"),
         "train_end": bundle.get("train_end"),
         "test_start": bundle.get("test_start"),
         "test_end": bundle.get("test_end"),
         "classification_model": bundle.get("classifier_name"),
-        "regression_model": bundle.get("regressor_name"),
         "trained_on_demo_trends": bundle.get("trained_on_demo_trends"),
     }, indent=2), encoding="utf-8")
     metrics.to_csv(ML_EVALUATION_METRICS_PATH, index=False)
@@ -212,7 +168,6 @@ def predict_current_signals(current_feature_df: pd.DataFrame, model_bundle: dict
         model_bundle = load_model()
     if model_bundle is None:
         result["ml_predicted_outperform_probability"] = np.nan
-        result["ml_predicted_excess_return_4w"] = np.nan
         result["ml_model_status"] = "not_trained"
         result["ml_model_confidence"] = 0.0
         return result
@@ -220,7 +175,6 @@ def predict_current_signals(current_feature_df: pd.DataFrame, model_bundle: dict
     missing_features = [column for column in feature_columns if column not in result.columns]
     if missing_features:
         result["ml_predicted_outperform_probability"] = np.nan
-        result["ml_predicted_excess_return_4w"] = np.nan
         result["ml_model_status"] = "feature_mismatch"
         result["ml_model_confidence"] = 0.0
         result["ml_feature_mismatch_detail"] = ", ".join(missing_features)
@@ -230,11 +184,9 @@ def predict_current_signals(current_feature_df: pd.DataFrame, model_bundle: dict
             result[column] = np.nan
     probabilities = _predict_probability(model_bundle["classifier"], result[feature_columns])
     result["ml_predicted_outperform_probability"] = probabilities
-    result["ml_predicted_excess_return_4w"] = model_bundle["regressor"].predict(result[feature_columns])
     result["ml_model_status"] = "trained_demo_trends" if model_bundle.get("trained_on_demo_trends") else "trained"
     result["ml_model_confidence"] = (np.abs(probabilities - 0.5) * 2 * 100).clip(0, 100)
     result["ml_classifier_model"] = model_bundle.get("classifier_name", "")
-    result["ml_regression_model"] = model_bundle.get("regressor_name", "")
     result["ml_feature_set"] = model_bundle.get("feature_set", "")
     return result
 

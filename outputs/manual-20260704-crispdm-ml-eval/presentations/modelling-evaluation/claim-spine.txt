@@ -1,0 +1,13 @@
+thesis: The project now models sector outperformance exclusively with supervised ML.
+audience: FOM KI Consulting Projekt presentation
+arc: modelling defines the ML system, evaluation shows that the system is technically valid but not yet investment-grade.
+
+slide 01:
+claim: Modelling is now a supervised ML pipeline, not a weighted scoring layer.
+proof object: SQLite-to-RandomForest workflow with model output contract
+source: src/pipeline.py, src/ml_model.py, data/processed/ml_sector_ranking.csv
+
+slide 02:
+claim: Evaluation proves the pipeline is measurable, but current model quality remains prototype-level.
+proof object: metric tiles plus backtest diagnostic and feature importance
+source: data/processed/ml_evaluation_metrics.csv, data/processed/ml_backtest_metrics.csv, data/processed/ml_feature_importance.csv

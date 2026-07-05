@@ -260,12 +260,10 @@ def load_latest_trend_features(sector: str) -> dict[str, Any]:
     return row
 
 
-def save_recommendation_scores(df: pd.DataFrame, run_id: str, run_timestamp: str) -> None:
+def save_ml_sector_rankings(df: pd.DataFrame, run_id: str, run_timestamp: str) -> None:
     columns = [
-        "operating_mode", "scoring_profile", "sector", "ticker", "total_score", "trend_score", "momentum_score",
-        "risk_score", "fundamental_score", "sentiment_score_component", "synergy_score", "recommendation",
-        "data_quality_status", "actionability_status", "ml_model_status", "ml_predicted_outperform_probability",
-        "ml_predicted_excess_return_4w",
+        "operating_mode", "rank", "date", "sector", "ticker", "ml_model_status",
+        "ml_predicted_outperform_probability", "ml_model_confidence", "ml_signal_label", "data_readiness_status",
     ]
     rows = []
     for _, item in df.iterrows():
@@ -273,12 +271,10 @@ def save_recommendation_scores(df: pd.DataFrame, run_id: str, run_timestamp: str
     with get_connection() as connection:
         connection.executemany(
             """
-            INSERT OR REPLACE INTO recommendation_scores
-            (run_id, run_timestamp, operating_mode, scoring_profile, sector, ticker, total_score, trend_score,
-             momentum_score, risk_score, fundamental_score, sentiment_score_component, synergy_score, recommendation,
-             data_quality_status, actionability_status, ml_model_status, ml_predicted_outperform_probability,
-             ml_predicted_excess_return_4w)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO ml_sector_rankings
+            (run_id, run_timestamp, operating_mode, rank, date, sector, ticker, ml_model_status,
+             ml_predicted_outperform_probability, ml_model_confidence, ml_signal_label, data_readiness_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             rows,
         )

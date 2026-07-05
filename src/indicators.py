@@ -1,4 +1,4 @@
-"""Indicator calculations for the sector ETF recommendation MVP."""
+"""Indicator calculations for the sector ETF ML prototype."""
 
 from __future__ import annotations
 
@@ -158,7 +158,7 @@ def calculate_risk_adjusted_return(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def enrich_market_indicators(df: pd.DataFrame) -> pd.DataFrame:
-    """Create the full indicator feature set used by the scoring module."""
+    """Create the full indicator feature set used by the ML model."""
     data = df.copy()
     data = calculate_returns(data)
     data = calculate_moving_averages(data, windows=[20, 50, 200])

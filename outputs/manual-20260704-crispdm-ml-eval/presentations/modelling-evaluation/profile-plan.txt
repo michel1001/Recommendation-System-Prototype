@@ -1,0 +1,8 @@
+task mode: create
+primary deck-profile: engineering-platform
+secondary gates: executive CRISP-DM teaching slide, finance-domain precision
+required proof objects: ML workflow map, evaluation metric evidence
+source requirements: use current local project artifacts
+brand constraints: match existing teal FOM-style slide grammar without fabricating official logos
+QA gates: slide claims, attached connectors, readable metric values, no rule-based scoring language
+known missing inputs: no source PPTX template supplied
